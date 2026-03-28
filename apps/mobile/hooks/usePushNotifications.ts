@@ -33,7 +33,7 @@ export function usePushNotifications() {
         api.post('/notifications/unregister', { token: tokenRef.current }).catch(() => {});
       }
     };
-  }, [user?.id, accessToken]);
+  }, [user?.id]);
 }
 
 async function registerForPushNotifications(): Promise<string | null> {

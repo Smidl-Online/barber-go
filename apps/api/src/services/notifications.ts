@@ -39,7 +39,7 @@ async function sendPushNotification(userId: string, payload: NotificationPayload
         const ticket = result.data[i];
         if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
           await prisma.pushToken.deleteMany({
-            where: { token: tokens[i].token },
+            where: { token: tokens[i].token, user_id: userId },
           });
         }
       }

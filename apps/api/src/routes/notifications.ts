@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
+import { registerPushTokenSchema } from '@barber-go/shared';
 import { AppError } from '../middleware/errorHandler';
 
 export const notificationsRouter = Router();
@@ -10,11 +11,7 @@ notificationsRouter.use(authenticate);
 // POST /api/notifications/register
 notificationsRouter.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { token, platform } = req.body;
-    if (!token) throw new AppError(400, 'token je povinný');
-    if (typeof token !== 'string' || !token.startsWith('ExponentPushToken[')) {
-      throw new AppError(400, 'Neplatný formát push tokenu');
-    }
+    const { token, platform } = registerPushTokenSchema.parse(req.body);
 
     await prisma.pushToken.upsert({
       where: {
@@ -27,7 +24,7 @@ notificationsRouter.post('/register', async (req: Request, res: Response, next: 
       create: {
         user_id: req.user!.userId,
         token,
-        platform: ['expo', 'ios', 'android'].includes(platform) ? platform : 'expo',
+        platform,
       },
     });
 
