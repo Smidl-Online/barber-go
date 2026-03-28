@@ -46,78 +46,93 @@ model User {
   provider_profile ProviderProfile?
   bookings         Booking[]
   reviews          Review[]
+  push_tokens      PushToken[]
 
   @@map("users")
 }
 
-model ProviderProfile {
-  id                 String       @id @default(uuid())
-  user_id            String       @unique
-  display_name       String
-  bio                String       @default("")
-  category           String       @default("barber")
-  experience_years   Int?
-  profile_photo_url  String?
-  location_type      LocationType @default(both)
-  salon_address      String?
-  salon_lat          Decimal?     @db.Decimal(10, 7)
-  salon_lng          Decimal?     @db.Decimal(10, 7)
-  service_radius_km  Int?
-  avg_rating         Decimal      @default(0) @db.Decimal(2, 1)
-  review_count       Int          @default(0)
-  is_active          Boolean      @default(true)
-  created_at         DateTime     @default(now())
-  updated_at         DateTime     @updatedAt
+model PushToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token      String
+  platform   String   @default("expo")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  user               User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  services           Service[]
-  portfolio_images   PortfolioImage[]
-  availability       Availability[]
-  bookings           Booking[]
-  reviews            Review[]
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, token])
+  @@map("push_tokens")
+}
+
+model ProviderProfile {
+  id                String       @id @default(uuid())
+  user_id           String       @unique
+  display_name      String
+  bio               String       @default("")
+  category          String       @default("barber")
+  experience_years  Int?
+  profile_photo_url String?
+  location_type     LocationType @default(both)
+  salon_address     String?
+  salon_lat         Decimal?     @db.Decimal(10, 7)
+  salon_lng         Decimal?     @db.Decimal(10, 7)
+  service_radius_km Int?
+  avg_rating        Decimal      @default(0) @db.Decimal(2, 1)
+  review_count      Int          @default(0)
+  is_active         Boolean      @default(true)
+  created_at        DateTime     @default(now())
+  updated_at        DateTime     @updatedAt
+
+  user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  services         Service[]
+  portfolio_images PortfolioImage[]
+  availability     Availability[]
+  bookings         Booking[]
+  reviews          Review[]
 
   @@map("provider_profiles")
 }
 
 model Service {
-  id               String          @id @default(uuid())
+  id               String  @id @default(uuid())
   provider_id      String
   name             String
   description      String?
   duration_minutes Int
-  price            Decimal         @db.Decimal(10, 2)
+  price            Decimal @db.Decimal(10, 2)
   price_note       String?
-  is_active        Boolean         @default(true)
-  sort_order       Int             @default(0)
+  is_active        Boolean @default(true)
+  sort_order       Int     @default(0)
 
-  provider         ProviderProfile @relation(fields: [provider_id], references: [id], onDelete: Cascade)
-  bookings         Booking[]
+  provider ProviderProfile @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  bookings Booking[]
 
   @@map("services")
 }
 
 model PortfolioImage {
-  id          String          @id @default(uuid())
+  id          String   @id @default(uuid())
   provider_id String
   image_url   String
   caption     String?
-  sort_order  Int             @default(0)
-  created_at  DateTime        @default(now())
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now())
 
-  provider    ProviderProfile @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  provider ProviderProfile @relation(fields: [provider_id], references: [id], onDelete: Cascade)
 
   @@map("portfolio_images")
 }
 
 model Availability {
-  id          String          @id @default(uuid())
+  id          String  @id @default(uuid())
   provider_id String
-  day_of_week Int             // 0=Po, 6=Ne
-  start_time  String          // "09:00"
-  end_time    String          // "18:00"
-  is_active   Boolean         @default(true)
+  day_of_week Int // 0=Po, 6=Ne
+  start_time  String // "09:00"
+  end_time    String // "18:00"
+  is_active   Boolean @default(true)
 
-  provider    ProviderProfile @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+  provider ProviderProfile @relation(fields: [provider_id], references: [id], onDelete: Cascade)
 
   @@map("availability")
 }
@@ -129,8 +144,8 @@ model Booking {
   service_id       String
   status           BookingStatus       @default(pending)
   booking_date     DateTime            @db.Date
-  start_time       String              // "14:00"
-  end_time         String              // "14:45"
+  start_time       String // "14:00"
+  end_time         String // "14:45"
   location_type    BookingLocationType
   customer_address String?
   customer_lat     Decimal?            @db.Decimal(10, 7)
@@ -139,27 +154,27 @@ model Booking {
   created_at       DateTime            @default(now())
   updated_at       DateTime            @updatedAt
 
-  customer         User                @relation(fields: [customer_id], references: [id])
-  provider         ProviderProfile     @relation(fields: [provider_id], references: [id])
-  service          Service             @relation(fields: [service_id], references: [id])
-  review           Review?
+  customer User            @relation(fields: [customer_id], references: [id])
+  provider ProviderProfile @relation(fields: [provider_id], references: [id])
+  service  Service         @relation(fields: [service_id], references: [id])
+  review   Review?
 
   @@map("bookings")
 }
 
 model Review {
-  id          String          @id @default(uuid())
-  booking_id  String          @unique
+  id          String   @id @default(uuid())
+  booking_id  String   @unique
   customer_id String
   provider_id String
   rating      Int
   comment     String?
-  created_at  DateTime        @default(now())
-  updated_at  DateTime        @updatedAt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  booking     Booking         @relation(fields: [booking_id], references: [id])
-  customer    User            @relation(fields: [customer_id], references: [id])
-  provider    ProviderProfile @relation(fields: [provider_id], references: [id])
+  booking  Booking         @relation(fields: [booking_id], references: [id])
+  customer User            @relation(fields: [customer_id], references: [id])
+  provider ProviderProfile @relation(fields: [provider_id], references: [id])
 
   @@map("reviews")
 }
