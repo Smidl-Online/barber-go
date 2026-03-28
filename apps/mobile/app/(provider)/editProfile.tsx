@@ -79,10 +79,10 @@ export default function EditProfileScreen() {
       display_name: displayName.trim(),
       bio: bio.trim() || undefined,
       category: category || undefined,
-      experience_years: experienceYears ? parseInt(experienceYears) : undefined,
+      experience_years: experienceYears ? (parseInt(experienceYears, 10) || undefined) : undefined,
       location_type: locationType,
       salon_address: salonAddress.trim() || undefined,
-      service_radius_km: serviceRadius ? parseFloat(serviceRadius) : undefined,
+      service_radius_km: serviceRadius ? (parseFloat(serviceRadius) || undefined) : undefined,
     });
   };
 

@@ -56,12 +56,6 @@ export default function ProviderLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="providerProfile"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }
