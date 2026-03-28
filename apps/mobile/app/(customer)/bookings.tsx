@@ -48,7 +48,7 @@ export default function BookingsScreen() {
           renderItem={({ item }) => (
             <BookingCard
               booking={item}
-              onPress={() => router.push(`/booking/${item.id}` as any)}
+              onPress={() => router.push(`/bookingDetail/${item.id}` as any)}
             />
           )}
           contentContainerStyle={styles.list}
