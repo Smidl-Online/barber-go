@@ -5,7 +5,6 @@ import { providersRouter } from './routes/providers';
 import { bookingsRouter } from './routes/bookings';
 import { reviewsRouter } from './routes/reviews';
 import { providerDashboardRouter } from './routes/providerDashboard';
-import { notificationsRouter } from './routes/notifications';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -20,7 +19,6 @@ app.use('/api/providers', providersRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/provider', providerDashboardRouter);
-app.use('/api/notifications', notificationsRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

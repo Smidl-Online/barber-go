@@ -3,7 +3,6 @@ import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../stores/authStore';
-import { usePushNotifications } from '../hooks/usePushNotifications';
 import { Colors } from '../constants/theme';
 
 const queryClient = new QueryClient({
@@ -14,7 +13,6 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const loadStoredAuth = useAuthStore((s) => s.loadStoredAuth);
-  usePushNotifications();
 
   useEffect(() => {
     loadStoredAuth();

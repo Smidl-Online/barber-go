@@ -3,7 +3,6 @@ import { createBookingSchema, updateBookingStatusSchema } from '@barber-go/share
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
-import { notifyNewBooking, notifyBookingStatusChange } from '../services/notifications';
 
 export const bookingsRouter = Router();
 
@@ -54,7 +53,7 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
 
     // Collision check
     const bookingDate = new Date(data.booking_date);
-    const conflicting = await prisma.booking.findFirst({
+    const existingBookings = await prisma.booking.findMany({
       where: {
         provider_id: data.provider_id,
         booking_date: bookingDate,
@@ -62,31 +61,10 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
       },
     });
 
-    if (conflicting) {
-      // Check time overlap
-      const cStartMin = timeToMinutes(conflicting.start_time);
-      const cEndMin = timeToMinutes(conflicting.end_time);
-      const newStartMin = startH * 60 + startM;
-      const newEndMin = endMinutes;
-
-      if (newStartMin < cEndMin && newEndMin > cStartMin) {
-        throw new AppError(409, 'Termín je obsazen, vyberte jiný čas');
-      }
-    }
-
-    // Also check all conflicting bookings (not just first)
-    const allConflicting = await prisma.booking.findMany({
-      where: {
-        provider_id: data.provider_id,
-        booking_date: bookingDate,
-        status: { in: ['pending', 'confirmed'] },
-      },
-    });
-
-    for (const cb of allConflicting) {
+    const newStartMin = startH * 60 + startM;
+    for (const cb of existingBookings) {
       const cStartMin = timeToMinutes(cb.start_time);
       const cEndMin = timeToMinutes(cb.end_time);
-      const newStartMin = startH * 60 + startM;
 
       if (newStartMin < cEndMin && endMinutes > cStartMin) {
         throw new AppError(409, 'Termín je obsazen, vyberte jiný čas');
@@ -111,19 +89,6 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
         service: true,
         provider: { select: { display_name: true } },
       },
-    });
-
-    // Notify provider about new booking
-    const customer = await prisma.user.findUnique({
-      where: { id: req.user!.userId },
-      select: { full_name: true },
-    });
-    notifyNewBooking({
-      provider_id: data.provider_id,
-      customer_name: customer?.full_name || 'Zákazník',
-      service_name: booking.service.name,
-      booking_date: data.booking_date,
-      start_time: data.start_time,
     });
 
     res.status(201).json(booking);
@@ -270,16 +235,6 @@ bookingsRouter.patch('/:id/status', async (req: Request, res: Response, next: Ne
         provider: { select: { display_name: true } },
       },
     });
-
-    // Notify customer about status change
-    if (['confirmed', 'cancelled_by_provider', 'completed'].includes(status)) {
-      notifyBookingStatusChange({
-        customer_id: booking.customer_id,
-        provider_name: updated.provider.display_name,
-        service_name: updated.service.name,
-        status,
-      });
-    }
 
     res.json(updated);
   } catch (e) {

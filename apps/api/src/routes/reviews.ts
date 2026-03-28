@@ -3,7 +3,6 @@ import { createReviewSchema, updateReviewSchema } from '@barber-go/shared';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
-import { notifyNewReview } from '../services/notifications';
 
 export const reviewsRouter = Router();
 
@@ -56,8 +55,6 @@ reviewsRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     });
 
     await updateProviderRating(booking.provider_id);
-    const customer = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { full_name: true } });
-    notifyNewReview({ provider_id: booking.provider_id, customer_name: customer?.full_name || 'Zákazník', rating: data.rating });
 
     res.status(201).json(review);
   } catch (e) {
