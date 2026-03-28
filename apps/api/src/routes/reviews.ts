@@ -56,7 +56,8 @@ reviewsRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     });
 
     await updateProviderRating(booking.provider_id);
-    notifyNewReview(review.id).catch(() => {});
+    const customer = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { full_name: true } });
+    notifyNewReview({ provider_id: booking.provider_id, customer_name: customer?.full_name || 'Zákazník', rating: data.rating });
 
     res.status(201).json(review);
   } catch (e) {

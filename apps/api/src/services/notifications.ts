@@ -1,68 +1,12 @@
 import { prisma } from '../utils/prisma';
 
-interface NewBookingParams {
-  provider_id: string;
-  customer_name: string;
-  service_name: string;
-  booking_date: string;
-  start_time: string;
-}
-
-interface StatusChangeParams {
-  customer_id: string;
-  provider_name: string;
-  service_name: string;
-  status: string;
-}
-
-export async function notifyNewBooking(params: NewBookingParams) {
-  const provider = await prisma.providerProfile.findUnique({
-    where: { id: params.provider_id },
-  });
-  if (!provider) return;
-
-  await sendPushToUser(provider.user_id, {
-    title: 'Nová rezervace! 📅',
-    body: `${params.customer_name} — ${params.service_name} (${params.start_time})`,
-    data: { type: 'new_booking' },
-  });
-}
-
-export function notifyBookingStatusChange(params: StatusChangeParams) {
-  const statusMessages: Record<string, NotificationPayload> = {
-    confirmed: {
-      title: 'Rezervace potvrzena ✓',
-      body: `${params.provider_name} potvrdil vaši rezervaci (${params.service_name})`,
-      data: { type: 'booking_confirmed' },
-    },
-    cancelled_by_provider: {
-      title: 'Rezervace zrušena',
-      body: `${params.provider_name} zrušil vaši rezervaci (${params.service_name})`,
-      data: { type: 'booking_cancelled' },
-    },
-    completed: {
-      title: 'Služba dokončena',
-      body: `Ohodnoťte ${params.provider_name} — jak jste byli spokojeni?`,
-      data: { type: 'booking_completed' },
-    },
-  };
-
-  const msg = statusMessages[params.status];
-  if (msg) {
-    sendPushToUser(params.customer_id, msg).catch(() => {});
-  }
-}
-
 interface NotificationPayload {
   title: string;
   body: string;
   data?: Record<string, string>;
 }
 
-/**
- * Send push notification to a user via Expo Push API
- */
-export async function sendPushNotification(userId: string, payload: NotificationPayload) {
+async function sendPushNotification(userId: string, payload: NotificationPayload) {
   const tokens = await prisma.pushToken.findMany({
     where: { user_id: userId },
     select: { token: true },
@@ -82,7 +26,7 @@ export async function sendPushNotification(userId: string, payload: Notification
     const response = await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(messages),
@@ -90,7 +34,6 @@ export async function sendPushNotification(userId: string, payload: Notification
 
     const result = await response.json();
 
-    // Clean up invalid tokens
     if (result.data) {
       for (let i = 0; i < result.data.length; i++) {
         const ticket = result.data[i];
@@ -106,9 +49,6 @@ export async function sendPushNotification(userId: string, payload: Notification
   }
 }
 
-/**
- * Notify provider about new booking
- */
 export async function notifyNewBooking(booking: {
   provider_id: string;
   customer_name: string;
@@ -129,9 +69,6 @@ export async function notifyNewBooking(booking: {
   });
 }
 
-/**
- * Notify customer about booking status change
- */
 export async function notifyBookingStatusChange(booking: {
   customer_id: string;
   provider_name: string;
@@ -154,9 +91,6 @@ export async function notifyBookingStatusChange(booking: {
   });
 }
 
-/**
- * Notify provider about new review
- */
 export async function notifyNewReview(review: {
   provider_id: string;
   customer_name: string;
