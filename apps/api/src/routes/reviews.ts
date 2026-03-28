@@ -3,6 +3,7 @@ import { createReviewSchema, updateReviewSchema } from '@barber-go/shared';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { notifyNewReview } from '../services/notifications';
 
 export const reviewsRouter = Router();
 
@@ -55,6 +56,7 @@ reviewsRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     });
 
     await updateProviderRating(booking.provider_id);
+    notifyNewReview(review.id).catch(() => {});
 
     res.status(201).json(review);
   } catch (e) {
