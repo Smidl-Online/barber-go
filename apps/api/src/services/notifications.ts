@@ -1,5 +1,58 @@
 import { prisma } from '../utils/prisma';
 
+interface NewBookingParams {
+  provider_id: string;
+  customer_name: string;
+  service_name: string;
+  booking_date: string;
+  start_time: string;
+}
+
+interface StatusChangeParams {
+  customer_id: string;
+  provider_name: string;
+  service_name: string;
+  status: string;
+}
+
+export async function notifyNewBooking(params: NewBookingParams) {
+  const provider = await prisma.providerProfile.findUnique({
+    where: { id: params.provider_id },
+  });
+  if (!provider) return;
+
+  await sendPushToUser(provider.user_id, {
+    title: 'Nová rezervace! 📅',
+    body: `${params.customer_name} — ${params.service_name} (${params.start_time})`,
+    data: { type: 'new_booking' },
+  });
+}
+
+export function notifyBookingStatusChange(params: StatusChangeParams) {
+  const statusMessages: Record<string, NotificationPayload> = {
+    confirmed: {
+      title: 'Rezervace potvrzena ✓',
+      body: `${params.provider_name} potvrdil vaši rezervaci (${params.service_name})`,
+      data: { type: 'booking_confirmed' },
+    },
+    cancelled_by_provider: {
+      title: 'Rezervace zrušena',
+      body: `${params.provider_name} zrušil vaši rezervaci (${params.service_name})`,
+      data: { type: 'booking_cancelled' },
+    },
+    completed: {
+      title: 'Služba dokončena',
+      body: `Ohodnoťte ${params.provider_name} — jak jste byli spokojeni?`,
+      data: { type: 'booking_completed' },
+    },
+  };
+
+  const msg = statusMessages[params.status];
+  if (msg) {
+    sendPushToUser(params.customer_id, msg).catch(() => {});
+  }
+}
+
 interface NotificationPayload {
   title: string;
   body: string;
