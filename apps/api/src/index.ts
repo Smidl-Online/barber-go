@@ -7,7 +7,7 @@ import { reviewsRouter } from './routes/reviews';
 import { providerDashboardRouter } from './routes/providerDashboard';
 import { errorHandler } from './middleware/errorHandler';
 
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -28,8 +28,10 @@ app.get('/api/health', (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 BarberGo API running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 BarberGo API running on port ${PORT}`);
+  });
+}
 
 export default app;
