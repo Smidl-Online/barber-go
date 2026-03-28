@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
@@ -29,7 +30,7 @@ export function usePushNotifications() {
 
     return () => {
       if (tokenRef.current) {
-        api.delete('/notifications/unregister', { data: { token: tokenRef.current } }).catch(() => {});
+        api.post('/notifications/unregister', { token: tokenRef.current }).catch(() => {});
       }
     };
   }, [user?.id, accessToken]);
@@ -61,6 +62,8 @@ async function registerForPushNotifications(): Promise<string | null> {
     });
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync();
+  const tokenData = await Notifications.getExpoPushTokenAsync({
+    projectId: Constants.expoConfig?.extra?.eas?.projectId,
+  });
   return tokenData.data;
 }

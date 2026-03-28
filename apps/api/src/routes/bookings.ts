@@ -124,7 +124,7 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
       service_name: booking.service.name,
       booking_date: data.booking_date,
       start_time: data.start_time,
-    });
+    }).catch(() => {});
 
     res.status(201).json(booking);
   } catch (e) {
@@ -278,7 +278,7 @@ bookingsRouter.patch('/:id/status', async (req: Request, res: Response, next: Ne
         provider_name: updated.provider.display_name,
         service_name: updated.service.name,
         status,
-      });
+      }).catch(() => {});
     }
 
     res.json(updated);
