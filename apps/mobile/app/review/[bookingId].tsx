@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createReview } from '../../services/reviews';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createReview, updateReview, deleteReview } from '../../services/reviews';
+import { getBooking } from '../../services/bookings';
 import StarRating from '../../components/StarRating';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ReviewScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -13,17 +15,52 @@ export default function ReviewScreen() {
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [existingReviewId, setExistingReviewId] = useState<string | null>(null);
+
+  // Load booking to check for existing review
+  const { data: booking } = useQuery({
+    queryKey: ['booking', bookingId],
+    queryFn: () => getBooking(bookingId!),
+    enabled: !!bookingId,
+  });
+
+  useEffect(() => {
+    if (booking?.review) {
+      setRating(booking.review.rating);
+      setComment(booking.review.comment || '');
+      setExistingReviewId(booking.review.id);
+    }
+  }, [booking]);
+
+  const isEditing = !!existingReviewId;
 
   const mutation = useMutation({
-    mutationFn: createReview,
+    mutationFn: async (data: { rating: number; comment?: string }) => {
+      if (isEditing) {
+        return updateReview(existingReviewId!, data);
+      }
+      return createReview({ booking_id: bookingId!, ...data });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      Alert.alert('Děkujeme!', 'Vaše hodnocení bylo uloženo.', [
+      queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
+      Alert.alert('Děkujeme!', isEditing ? 'Hodnocení aktualizováno.' : 'Vaše hodnocení bylo uloženo.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     },
     onError: (err: any) => {
       Alert.alert('Chyba', err.response?.data?.message || 'Nepodařilo se uložit hodnocení');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteReview(existingReviewId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
+      Alert.alert('Smazáno', 'Hodnocení bylo odstraněno.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
     },
   });
 
@@ -34,15 +71,21 @@ export default function ReviewScreen() {
     }
 
     mutation.mutate({
-      booking_id: bookingId!,
       rating,
       comment: comment || undefined,
     });
   };
 
+  const handleDelete = () => {
+    Alert.alert('Smazat hodnocení?', 'Tuto akci nelze vrátit.', [
+      { text: 'Zrušit', style: 'cancel' },
+      { text: 'Smazat', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Jak jste byli spokojeni?</Text>
+      <Text style={styles.title}>{isEditing ? 'Upravit hodnocení' : 'Jak jste byli spokojeni?'}</Text>
 
       <View style={styles.starsContainer}>
         <StarRating rating={rating} size={40} editable onRate={setRating} />
@@ -76,9 +119,18 @@ export default function ReviewScreen() {
         {mutation.isPending ? (
           <ActivityIndicator color={Colors.white} />
         ) : (
-          <Text style={styles.submitBtnText}>Odeslat hodnocení</Text>
+          <Text style={styles.submitBtnText}>
+            {isEditing ? 'Aktualizovat hodnocení' : 'Odeslat hodnocení'}
+          </Text>
         )}
       </TouchableOpacity>
+
+      {isEditing && (
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+          <Ionicons name="trash-outline" size={18} color={Colors.error} />
+          <Text style={styles.deleteBtnText}>Smazat hodnocení</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -117,4 +169,17 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: Spacing.md,
+    padding: Spacing.md,
+  },
+  deleteBtnText: {
+    color: Colors.error,
+    fontSize: FontSize.md,
+    fontWeight: '600',
+  },
 });

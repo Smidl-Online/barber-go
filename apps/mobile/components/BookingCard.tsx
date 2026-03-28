@@ -42,6 +42,17 @@ export default function BookingCard({ booking, onPress, isProvider }: BookingCar
         <View style={styles.statusRow}>
           <View style={[styles.statusDot, { backgroundColor: status.color }]} />
           <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
+          {booking.status === 'completed' && !booking.review && !isProvider && (
+            <View style={styles.reviewBadge}>
+              <Ionicons name="star" size={10} color={Colors.white} />
+              <Text style={styles.reviewBadgeText}>Ohodnotit</Text>
+            </View>
+          )}
+          {booking.review && (
+            <View style={styles.reviewedBadge}>
+              <Ionicons name="star" size={10} color={Colors.star} />
+            </View>
+          )}
         </View>
       </View>
       <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
@@ -110,5 +121,23 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: FontSize.xs,
     fontWeight: '600',
+  },
+  reviewBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: Colors.star,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    marginLeft: 8,
+  },
+  reviewBadgeText: {
+    fontSize: FontSize.xs,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  reviewedBadge: {
+    marginLeft: 8,
   },
 });
