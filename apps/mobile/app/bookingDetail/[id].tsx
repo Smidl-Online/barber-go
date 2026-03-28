@@ -47,6 +47,7 @@ export default function BookingDetailScreen() {
   const { data: booking, isLoading } = useQuery<BookingDetail>({
     queryKey: ['booking', id],
     queryFn: () => getBooking(id!),
+    enabled: !!id,
   });
 
   const cancelMutation = useMutation({
@@ -70,7 +71,17 @@ export default function BookingDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
     },
+    onError: (err: any) => {
+      Alert.alert('Chyba', err.response?.data?.message || 'Nepodařilo se označit jako dokončené');
+    },
   });
+
+  const handleComplete = () => {
+    Alert.alert('Dokončit rezervaci?', 'Opravdu chcete označit tuto rezervaci jako dokončenou?', [
+      { text: 'Ne', style: 'cancel' },
+      { text: 'Ano, dokončit', onPress: () => completeMutation.mutate() },
+    ]);
+  };
 
   const handleCancel = () => {
     Alert.alert('Zrušit rezervaci?', 'Opravdu chcete zrušit tuto rezervaci?', [
@@ -215,7 +226,7 @@ export default function BookingDetailScreen() {
       {canComplete && (
         <TouchableOpacity
           style={styles.completeBtn}
-          onPress={() => completeMutation.mutate()}
+          onPress={handleComplete}
         >
           <Ionicons name="checkmark-done" size={20} color={Colors.white} />
           <Text style={styles.completeBtnText}>Označit jako dokončené</Text>
