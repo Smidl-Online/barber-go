@@ -62,6 +62,9 @@ export default function ReviewScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     },
+    onError: (err: any) => {
+      Alert.alert('Chyba', err.response?.data?.message || 'Nepodařilo se smazat hodnocení');
+    },
   });
 
   const handleSubmit = () => {
