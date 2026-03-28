@@ -21,6 +21,30 @@ async function getProfile(userId: string) {
   return profile;
 }
 
+// GET /api/provider/profile
+providerDashboardRouter.get('/profile', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfile(req.user!.userId);
+    res.json(profile);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/provider/portfolio
+providerDashboardRouter.get('/portfolio', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfile(req.user!.userId);
+    const images = await prisma.portfolioImage.findMany({
+      where: { provider_id: profile.id },
+      orderBy: { sort_order: 'asc' },
+    });
+    res.json(images);
+  } catch (e) {
+    next(e);
+  }
+});
+
 // PUT /api/provider/profile
 providerDashboardRouter.put('/profile', async (req: Request, res: Response, next: NextFunction) => {
   try {

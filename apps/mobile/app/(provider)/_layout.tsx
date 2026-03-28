@@ -36,10 +36,30 @@ export default function ProviderLayout() {
         }}
       />
       <Tabs.Screen
-        name="providerProfile"
+        name="availability"
+        options={{
+          title: 'Hodiny',
+          tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="portfolio"
+        options={{
+          title: 'Portfolio',
+          tabBarIcon: ({ color, size }) => <Ionicons name="images" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="editProfile"
         options={{
           title: 'Profil',
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="providerProfile"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
