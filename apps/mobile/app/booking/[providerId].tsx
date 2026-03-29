@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProvider, getProviderAvailability } from '../../services/providers';
 import { createBooking } from '../../services/bookings';
@@ -19,9 +19,12 @@ import type { ProviderDetail, Service } from '../../types/models';
 
 type Step = 'service' | 'date' | 'time' | 'location' | 'note' | 'confirm';
 
+const STEPS: Step[] = ['service', 'date', 'time', 'location', 'note', 'confirm'];
+
 export default function BookingScreen() {
   const { providerId } = useLocalSearchParams<{ providerId: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState<Step>('service');
@@ -85,6 +88,29 @@ export default function BookingScreen() {
     });
   };
 
+  const goBack = useCallback(() => {
+    const currentIndex = STEPS.indexOf(step);
+    if (currentIndex <= 0) {
+      router.back();
+    } else {
+      setStep(STEPS[currentIndex - 1]);
+    }
+  }, [step, router]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={goBack}
+          style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}
+        >
+          <Ionicons name="chevron-back" size={24} color={Colors.white} />
+          <Text style={{ color: Colors.white, fontSize: 17 }}>Zpět</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, goBack]);
+
   const canGoMobile = provider?.location_type === 'mobile' || provider?.location_type === 'both';
   const canGoSalon = provider?.location_type === 'salon' || provider?.location_type === 'both';
 
@@ -100,14 +126,13 @@ export default function BookingScreen() {
     <ScrollView style={styles.container}>
       {/* Progress */}
       <View style={styles.progress}>
-        {(['service', 'date', 'time', 'location', 'note', 'confirm'] as Step[]).map((s, i) => (
+        {STEPS.map((s, i) => (
           <View
             key={s}
             style={[
               styles.progressDot,
               step === s && styles.progressDotActive,
-              (['service', 'date', 'time', 'location', 'note', 'confirm'] as Step[]).indexOf(step) > i &&
-                styles.progressDotDone,
+              STEPS.indexOf(step) > i && styles.progressDotDone,
             ]}
           />
         ))}
@@ -162,9 +187,6 @@ export default function BookingScreen() {
               </TouchableOpacity>
             );
           })}
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('service')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -196,9 +218,6 @@ export default function BookingScreen() {
               ))}
             </View>
           )}
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('date')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -254,9 +273,6 @@ export default function BookingScreen() {
             </View>
           )}
 
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('time')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -273,9 +289,6 @@ export default function BookingScreen() {
           />
           <TouchableOpacity style={styles.nextBtn} onPress={() => setStep('confirm')}>
             <Text style={styles.nextBtnText}>Pokračovat ke shrnutí</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('location')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -336,9 +349,6 @@ export default function BookingScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('note')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
@@ -417,8 +427,6 @@ const styles = StyleSheet.create({
   },
   nextBtnDisabled: { opacity: 0.5 },
   nextBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: '700' },
-  backBtn: { alignItems: 'center', marginTop: Spacing.md },
-  backBtnText: { color: Colors.accent, fontSize: FontSize.md },
   summaryCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,

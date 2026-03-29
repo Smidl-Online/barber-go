@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   FlatList,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { getProvider } from '../../services/providers';
@@ -22,6 +22,21 @@ const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 export default function ProviderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}
+        >
+          <Ionicons name="chevron-back" size={24} color={Colors.white} />
+          <Text style={{ color: Colors.white, fontSize: 17 }}>Zpět</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, router]);
 
   const { data: provider, isLoading } = useQuery<ProviderDetail>({
     queryKey: ['provider', id],
