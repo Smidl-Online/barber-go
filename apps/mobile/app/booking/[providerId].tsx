@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Alert,
   ActivityIndicator,
+  BackHandler,
+  Platform,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProvider, getProviderAvailability } from '../../services/providers';
 import { createBooking } from '../../services/bookings';
@@ -17,11 +18,14 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import type { ProviderDetail, Service } from '../../types/models';
 
-type Step = 'service' | 'date' | 'time' | 'location' | 'note' | 'confirm';
+type Step = 'service' | 'date' | 'time' | 'location' | 'note' | 'confirm' | 'success';
+
+const STEPS: Step[] = ['service', 'date', 'time', 'location', 'note', 'confirm'];
 
 export default function BookingScreen() {
   const { providerId } = useLocalSearchParams<{ providerId: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState<Step>('service');
@@ -50,26 +54,38 @@ export default function BookingScreen() {
     mutationFn: createBooking,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      Alert.alert('Úspěch', 'Rezervace byla vytvořena! Čeká na potvrzení barberem.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      setStep('success');
     },
     onError: (err: any) => {
-      Alert.alert('Chyba', err.response?.data?.message || 'Nepodařilo se vytvořit rezervaci');
+      // Keep on confirm step so user can retry
     },
   });
 
-  // Generate next 14 days
+  // Build set of working day indices (0=Monday..6=Sunday)
+  const workingDays = useMemo(() => {
+    if (!provider) return new Set<number>();
+    const days = new Set<number>();
+    provider.availability.forEach((a) => {
+      if (a.is_active) days.add(a.day_of_week);
+    });
+    return days;
+  }, [provider]);
+
+  // Generate next 14 days with availability info
   const dateOptions = useMemo(() => {
-    const dates: string[] = [];
+    const dates: { date: string; available: boolean }[] = [];
     const today = new Date();
     for (let i = 1; i <= 14; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
-      dates.push(d.toISOString().split('T')[0]);
+      const dateStr = d.toISOString().split('T')[0];
+      // Convert JS getDay (0=Sun) to our format (0=Mon)
+      const jsDay = d.getDay();
+      const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
+      dates.push({ date: dateStr, available: workingDays.has(dayIndex) });
     }
     return dates;
-  }, []);
+  }, [workingDays]);
 
   const handleConfirm = () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
@@ -85,6 +101,46 @@ export default function BookingScreen() {
     });
   };
 
+  const goBack = useCallback(() => {
+    if (step === 'success') {
+      router.back();
+      return;
+    }
+    const currentIndex = STEPS.indexOf(step);
+    if (currentIndex <= 0) {
+      router.back();
+    } else {
+      setStep(STEPS[currentIndex - 1]);
+    }
+  }, [step, router]);
+
+  // Android hardware back button
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const handler = () => {
+      goBack();
+      return true; // prevent default
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handler);
+    return () => subscription.remove();
+  }, [goBack]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: step === 'success'
+        ? () => null
+        : () => (
+            <TouchableOpacity
+              onPress={goBack}
+              style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={Colors.white} />
+              <Text style={{ color: Colors.white, fontSize: 17 }}>Zpět</Text>
+            </TouchableOpacity>
+          ),
+    });
+  }, [navigation, goBack, step]);
+
   const canGoMobile = provider?.location_type === 'mobile' || provider?.location_type === 'both';
   const canGoSalon = provider?.location_type === 'salon' || provider?.location_type === 'both';
 
@@ -96,18 +152,63 @@ export default function BookingScreen() {
     );
   }
 
+  // Success screen
+  if (step === 'success') {
+    return (
+      <View style={styles.successContainer}>
+        <View style={styles.successIconCircle}>
+          <Ionicons name="checkmark" size={64} color={Colors.white} />
+        </View>
+        <Text style={styles.successTitle}>Rezervace vytvořena!</Text>
+        <Text style={styles.successSubtitle}>
+          Čeká na potvrzení barberem. Jakmile ji potvrdí, dostanete notifikaci.
+        </Text>
+
+        <View style={styles.successSummary}>
+          <View style={styles.successRow}>
+            <Ionicons name="cut-outline" size={18} color={Colors.textLight} />
+            <Text style={styles.successRowText}>{selectedService?.name}</Text>
+          </View>
+          <View style={styles.successRow}>
+            <Ionicons name="calendar-outline" size={18} color={Colors.textLight} />
+            <Text style={styles.successRowText}>
+              {selectedDate && new Date(selectedDate).toLocaleDateString('cs-CZ', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
+            </Text>
+          </View>
+          <View style={styles.successRow}>
+            <Ionicons name="time-outline" size={18} color={Colors.textLight} />
+            <Text style={styles.successRowText}>{selectedTime}</Text>
+          </View>
+          <View style={styles.successRow}>
+            <Ionicons name="cash-outline" size={18} color={Colors.textLight} />
+            <Text style={[styles.successRowText, { color: Colors.accent, fontWeight: '700' }]}>
+              {selectedService?.price} Kč
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.successBtn} onPress={() => router.back()}>
+          <Text style={styles.successBtnText}>Hotovo</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       {/* Progress */}
       <View style={styles.progress}>
-        {(['service', 'date', 'time', 'location', 'note', 'confirm'] as Step[]).map((s, i) => (
+        {STEPS.map((s, i) => (
           <View
             key={s}
             style={[
               styles.progressDot,
               step === s && styles.progressDotActive,
-              (['service', 'date', 'time', 'location', 'note', 'confirm'] as Step[]).indexOf(step) > i &&
-                styles.progressDotDone,
+              STEPS.indexOf(step) > i && styles.progressDotDone,
             ]}
           />
         ))}
@@ -140,7 +241,7 @@ export default function BookingScreen() {
       {step === 'date' && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Vyberte datum</Text>
-          {dateOptions.map((date) => {
+          {dateOptions.map(({ date, available }) => {
             const d = new Date(date);
             const label = d.toLocaleDateString('cs-CZ', {
               weekday: 'long',
@@ -150,21 +251,29 @@ export default function BookingScreen() {
             return (
               <TouchableOpacity
                 key={date}
-                style={[styles.optionCard, selectedDate === date && styles.optionCardSelected]}
+                style={[
+                  styles.optionCard,
+                  selectedDate === date && styles.optionCardSelected,
+                  !available && styles.optionCardDisabled,
+                ]}
+                disabled={!available}
                 onPress={() => {
                   setSelectedDate(date);
                   setSelectedTime('');
                   setStep('time');
                 }}
               >
-                <Text style={styles.optionTitle}>{label}</Text>
-                <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+                <Text style={[styles.optionTitle, !available && styles.optionTitleDisabled]}>
+                  {label}
+                </Text>
+                {!available ? (
+                  <Text style={styles.closedLabel}>Zavřeno</Text>
+                ) : (
+                  <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+                )}
               </TouchableOpacity>
             );
           })}
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('service')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -196,9 +305,6 @@ export default function BookingScreen() {
               ))}
             </View>
           )}
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('date')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -218,7 +324,13 @@ export default function BookingScreen() {
               <Ionicons name="business" size={24} color={Colors.accent} />
               <View style={{ marginLeft: Spacing.md, flex: 1 }}>
                 <Text style={styles.optionTitle}>V salonu</Text>
-                <Text style={styles.optionSubtitle}>{provider.salon_address || 'Adresa salonu'}</Text>
+                {provider.salon_address ? (
+                  <Text style={styles.optionSubtitle}>{provider.salon_address}</Text>
+                ) : (
+                  <Text style={[styles.optionSubtitle, { fontStyle: 'italic' }]}>
+                    Adresa bude upřesněna
+                  </Text>
+                )}
               </View>
             </TouchableOpacity>
           )}
@@ -254,9 +366,6 @@ export default function BookingScreen() {
             </View>
           )}
 
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('time')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -273,9 +382,6 @@ export default function BookingScreen() {
           />
           <TouchableOpacity style={styles.nextBtn} onPress={() => setStep('confirm')}>
             <Text style={styles.nextBtnText}>Pokračovat ke shrnutí</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('location')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -324,6 +430,15 @@ export default function BookingScreen() {
             ) : null}
           </View>
 
+          {mutation.isError && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={18} color={Colors.error} />
+              <Text style={styles.errorText}>
+                {(mutation.error as any)?.response?.data?.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to znovu.'}
+              </Text>
+            </View>
+          )}
+
           <TouchableOpacity
             style={styles.confirmBtn}
             onPress={handleConfirm}
@@ -336,9 +451,6 @@ export default function BookingScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep('note')}>
-            <Text style={styles.backBtnText}>Zpět</Text>
-          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
@@ -380,9 +492,17 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   optionCardSelected: { borderColor: Colors.accent },
+  optionCardDisabled: { opacity: 0.45 },
   optionTitle: { fontSize: FontSize.md, fontWeight: '600', color: Colors.text },
+  optionTitleDisabled: { color: Colors.textMuted },
   optionSubtitle: { fontSize: FontSize.sm, color: Colors.textLight, marginTop: 2 },
   optionPrice: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.accent },
+  closedLabel: {
+    fontSize: FontSize.sm,
+    color: Colors.error,
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
   timeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -417,8 +537,6 @@ const styles = StyleSheet.create({
   },
   nextBtnDisabled: { opacity: 0.5 },
   nextBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: '700' },
-  backBtn: { alignItems: 'center', marginTop: Spacing.md },
-  backBtnText: { color: Colors.accent, fontSize: FontSize.md },
   summaryCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
@@ -441,4 +559,75 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   confirmBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fef2f2',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  errorText: { flex: 1, fontSize: FontSize.sm, color: Colors.error },
+  // Success screen
+  successContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  successIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.success,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  successTitle: {
+    fontSize: FontSize.xxl,
+    fontWeight: '800',
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  successSubtitle: {
+    fontSize: FontSize.md,
+    color: Colors.textLight,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: Spacing.lg,
+  },
+  successSummary: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    width: '100%',
+    marginBottom: Spacing.lg,
+  },
+  successRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.background,
+  },
+  successRowText: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  successBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xxl,
+    alignItems: 'center',
+  },
+  successBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
 });

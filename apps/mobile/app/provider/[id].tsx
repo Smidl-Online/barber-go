@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   FlatList,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { getProvider } from '../../services/providers';
@@ -22,6 +22,21 @@ const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 export default function ProviderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}
+        >
+          <Ionicons name="chevron-back" size={24} color={Colors.white} />
+          <Text style={{ color: Colors.white, fontSize: 17 }}>Zpět</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, router]);
 
   const { data: provider, isLoading } = useQuery<ProviderDetail>({
     queryKey: ['provider', id],
@@ -48,10 +63,13 @@ export default function ProviderDetailScreen() {
     <View style={styles.container}>
       <ScrollView>
         {/* Hero */}
-        <Image
-          source={{ uri: provider.profile_photo_url || 'https://picsum.photos/400/300' }}
-          style={styles.heroImage}
-        />
+        {provider.profile_photo_url ? (
+          <Image source={{ uri: provider.profile_photo_url }} style={styles.heroImage} />
+        ) : (
+          <View style={[styles.heroImage, styles.heroPlaceholder]}>
+            <Ionicons name="person" size={80} color={Colors.white} />
+          </View>
+        )}
 
         {/* Profile info */}
         <View style={styles.profileSection}>
@@ -122,14 +140,22 @@ export default function ProviderDetailScreen() {
         {/* Availability */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Pracovní doba</Text>
-          {provider.availability.map((a) => (
-            <View key={a.id} style={styles.availRow}>
-              <Text style={styles.dayName}>{DAY_NAMES[a.day_of_week]}</Text>
-              <Text style={styles.availTime}>
-                {a.start_time} – {a.end_time}
-              </Text>
-            </View>
-          ))}
+          {DAY_NAMES.map((dayName, dayIndex) => {
+            const daySlots = provider.availability.filter(
+              (a) => a.day_of_week === dayIndex && a.is_active
+            );
+            const isClosed = daySlots.length === 0;
+            return (
+              <View key={dayIndex} style={styles.availRow}>
+                <Text style={[styles.dayName, isClosed && styles.dayNameClosed]}>{dayName}</Text>
+                <Text style={[styles.availTime, isClosed && styles.availTimeClosed]}>
+                  {isClosed
+                    ? 'Zavřeno'
+                    : daySlots.map((s) => `${s.start_time} – ${s.end_time}`).join(', ')}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Reviews */}
@@ -170,6 +196,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   heroImage: { width: '100%', height: 250 },
+  heroPlaceholder: {
+    backgroundColor: Colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   profileSection: { padding: Spacing.lg, backgroundColor: Colors.white },
   name: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.text },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.xs },
@@ -213,7 +244,9 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.background,
   },
   dayName: { fontSize: FontSize.md, fontWeight: '600', color: Colors.text, width: 40 },
+  dayNameClosed: { color: Colors.textMuted },
   availTime: { fontSize: FontSize.md, color: Colors.textLight },
+  availTimeClosed: { color: Colors.textMuted, fontStyle: 'italic' },
   reviewCard: {
     backgroundColor: Colors.background,
     padding: Spacing.md,

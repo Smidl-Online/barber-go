@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import StarRating from './StarRating';
@@ -23,10 +23,13 @@ export default function ProviderCard({ provider, onPress }: ProviderCardProps) {
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <Image
-        source={{ uri: provider.profile_photo_url || 'https://picsum.photos/100/100' }}
-        style={styles.avatar}
-      />
+      {provider.profile_photo_url ? (
+        <Image source={{ uri: provider.profile_photo_url }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <Ionicons name="person" size={36} color={Colors.white} />
+        </View>
+      )}
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
           {provider.display_name}
@@ -71,6 +74,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: BorderRadius.md,
+  },
+  avatarPlaceholder: {
+    backgroundColor: Colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   info: {
     flex: 1,
