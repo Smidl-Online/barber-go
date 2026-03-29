@@ -53,7 +53,7 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
 
     // Collision check
     const bookingDate = new Date(data.booking_date);
-    const conflicting = await prisma.booking.findFirst({
+    const existingBookings = await prisma.booking.findMany({
       where: {
         provider_id: data.provider_id,
         booking_date: bookingDate,
@@ -61,31 +61,10 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
       },
     });
 
-    if (conflicting) {
-      // Check time overlap
-      const cStartMin = timeToMinutes(conflicting.start_time);
-      const cEndMin = timeToMinutes(conflicting.end_time);
-      const newStartMin = startH * 60 + startM;
-      const newEndMin = endMinutes;
-
-      if (newStartMin < cEndMin && newEndMin > cStartMin) {
-        throw new AppError(409, 'Termín je obsazen, vyberte jiný čas');
-      }
-    }
-
-    // Also check all conflicting bookings (not just first)
-    const allConflicting = await prisma.booking.findMany({
-      where: {
-        provider_id: data.provider_id,
-        booking_date: bookingDate,
-        status: { in: ['pending', 'confirmed'] },
-      },
-    });
-
-    for (const cb of allConflicting) {
+    const newStartMin = startH * 60 + startM;
+    for (const cb of existingBookings) {
       const cStartMin = timeToMinutes(cb.start_time);
       const cEndMin = timeToMinutes(cb.end_time);
-      const newStartMin = startH * 60 + startM;
 
       if (newStartMin < cEndMin && endMinutes > cStartMin) {
         throw new AppError(409, 'Termín je obsazen, vyberte jiný čas');
@@ -251,6 +230,10 @@ bookingsRouter.patch('/:id/status', async (req: Request, res: Response, next: Ne
     const updated = await prisma.booking.update({
       where: { id: req.params.id },
       data: { status },
+      include: {
+        service: { select: { name: true } },
+        provider: { select: { display_name: true } },
+      },
     });
 
     res.json(updated);
