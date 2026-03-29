@@ -1,10 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { registerSchema, loginSchema } from '@barber-go/shared';
 import { prisma } from '../utils/prisma';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { AppError } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
+
+const updateProfileSchema = z.object({
+  full_name: z.string().min(2).optional(),
+  phone: z.string().optional().nullable(),
+});
 
 export const authRouter = Router();
 
@@ -94,6 +100,30 @@ authRouter.post('/refresh', async (req: Request, res: Response, next: NextFuncti
     const tokens = generateTokens({ userId: payload.userId, role: payload.role });
 
     res.json(tokens);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// PUT /api/auth/profile
+authRouter.put('/profile', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = updateProfileSchema.parse(req.body);
+
+    const user = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        role: true,
+        phone: true,
+        avatar_url: true,
+      },
+    });
+
+    res.json(user);
   } catch (e) {
     next(e);
   }

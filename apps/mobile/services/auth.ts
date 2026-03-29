@@ -15,3 +15,8 @@ export async function getMe() {
   const res = await api.get('/auth/me');
   return res.data;
 }
+
+export async function updateProfile(data: { full_name?: string; phone?: string | null }) {
+  const res = await api.put('/auth/profile', data);
+  return res.data;
+}
