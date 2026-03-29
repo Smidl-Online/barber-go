@@ -25,7 +25,7 @@
       "expo-secure-store"
     ],
     "extra": {
-      "apiUrl": "http://localhost:3000"
+      "apiUrl": "https://barbergo-dev-api.coolify.smidl.online"
     }
   }
 }
