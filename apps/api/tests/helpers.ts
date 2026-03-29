@@ -18,7 +18,6 @@ export async function createTestProvider() {
       role: 'provider',
     },
   });
-
   const profile = await prisma.providerProfile.create({
     data: {
       user_id: user.id,
@@ -29,7 +28,6 @@ export async function createTestProvider() {
       salon_address: 'Testovací 123, Praha',
     },
   });
-
   const { accessToken } = generateTokens({ userId: user.id, role: 'provider' });
   return { user, profile, token: accessToken };
 }
@@ -44,7 +42,6 @@ export async function createTestCustomer() {
       role: 'customer',
     },
   });
-
   const { accessToken } = generateTokens({ userId: user.id, role: 'customer' });
   return { user, token: accessToken };
 }
