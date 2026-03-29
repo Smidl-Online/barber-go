@@ -64,8 +64,14 @@ async function registerForPushNotifications(): Promise<string | null> {
     });
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync({
-    projectId: Constants.expoConfig?.extra?.eas?.projectId,
-  });
-  return tokenData.data;
+  try {
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: projectId ?? undefined,
+    });
+    return tokenData.data;
+  } catch (error) {
+    console.warn('Push notifications unavailable (missing projectId or running in Expo Go):', error);
+    return null;
+  }
 }
