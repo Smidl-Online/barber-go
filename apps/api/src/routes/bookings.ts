@@ -3,6 +3,7 @@ import { createBookingSchema, updateBookingStatusSchema } from '@barber-go/share
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { notifyNewBooking, notifyBookingStatusChange } from '../services/notifications';
 
 export const bookingsRouter = Router();
 
@@ -90,6 +91,19 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
         provider: { select: { display_name: true } },
       },
     });
+
+    // Notify provider about new booking
+    const customer = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { full_name: true },
+    });
+    notifyNewBooking({
+      provider_id: data.provider_id,
+      customer_name: customer?.full_name || 'Zákazník',
+      service_name: booking.service.name,
+      booking_date: data.booking_date,
+      start_time: data.start_time,
+    }).catch(console.error);
 
     res.status(201).json(booking);
   } catch (e) {
@@ -235,6 +249,16 @@ bookingsRouter.patch('/:id/status', async (req: Request, res: Response, next: Ne
         provider: { select: { display_name: true } },
       },
     });
+
+    // Notify customer about status change
+    if (['confirmed', 'cancelled_by_provider', 'completed'].includes(status)) {
+      notifyBookingStatusChange({
+        customer_id: booking.customer_id,
+        provider_name: updated.provider.display_name,
+        service_name: updated.service.name,
+        status,
+      }).catch(console.error);
+    }
 
     res.json(updated);
   } catch (e) {

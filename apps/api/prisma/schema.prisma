@@ -46,6 +46,8 @@ model User {
   provider_profile ProviderProfile?
   bookings         Booking[]
   reviews          Review[]
+  push_tokens      PushToken[]
+
   @@map("users")
 }
 
@@ -163,3 +165,16 @@ model Review {
   @@map("reviews")
 }
 
+model PushToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token      String
+  platform   String   @default("expo")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, token], name: "user_id_token")
+  @@map("push_tokens")
+}
