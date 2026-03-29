@@ -13,7 +13,7 @@ RUN npm ci --ignore-scripts
 COPY apps/api/prisma/schema.prisma apps/api/prisma/
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 
-# Build shared + API
+# Build shared + API + seed
 FROM deps AS build
 COPY packages/shared/ packages/shared/
 COPY tsconfig.base.json ./
@@ -25,14 +25,19 @@ RUN npm run build --workspace=apps/api
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Copy hoisted node_modules + built code
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/apps/api/prisma ./apps/api/prisma
-COPY package.json ./
+# Copy package files and install production-only dependencies
+COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
+RUN npm ci --omit=dev --ignore-scripts
+
+# Generate Prisma client in production image
+COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+
+# Copy built code
+COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 
 # Entrypoint handles migrations
 COPY entrypoint.sh /entrypoint.sh
