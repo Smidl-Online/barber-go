@@ -4,6 +4,7 @@ import {
   createServiceSchema,
   updateServiceSchema,
   createAvailabilitySchema,
+  createPortfolioImageSchema,
 } from '@barber-go/shared';
 import { prisma } from '../utils/prisma';
 import { authenticate, requireRole } from '../middleware/auth';
@@ -20,6 +21,30 @@ async function getProfile(userId: string) {
   if (!profile) throw new AppError(404, 'Provider profil nenalezen');
   return profile;
 }
+
+// GET /api/provider/profile
+providerDashboardRouter.get('/profile', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfile(req.user!.userId);
+    res.json(profile);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/provider/portfolio
+providerDashboardRouter.get('/portfolio', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfile(req.user!.userId);
+    const images = await prisma.portfolioImage.findMany({
+      where: { provider_id: profile.id },
+      orderBy: { sort_order: 'asc' },
+    });
+    res.json(images);
+  } catch (e) {
+    next(e);
+  }
+});
 
 // PUT /api/provider/profile
 providerDashboardRouter.put('/profile', async (req: Request, res: Response, next: NextFunction) => {
@@ -188,16 +213,14 @@ providerDashboardRouter.delete('/availability/:id', async (req: Request, res: Re
 providerDashboardRouter.post('/portfolio', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const profile = await getProfile(req.user!.userId);
-    const { image_url, caption, sort_order } = req.body;
-
-    if (!image_url) throw new AppError(400, 'image_url je povinný');
+    const data = createPortfolioImageSchema.parse(req.body);
 
     const image = await prisma.portfolioImage.create({
       data: {
         provider_id: profile.id,
-        image_url,
-        caption,
-        sort_order: sort_order ?? 0,
+        image_url: data.image_url,
+        caption: data.caption,
+        sort_order: data.sort_order ?? 0,
       },
     });
 
