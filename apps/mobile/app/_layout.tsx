@@ -36,6 +36,7 @@ export default function RootLayout() {
         <Stack.Screen name="provider/[id]" options={{ title: 'Detail barbera' }} />
         <Stack.Screen name="booking/[providerId]" options={{ title: 'Rezervace' }} />
         <Stack.Screen name="review/[bookingId]" options={{ title: 'Hodnocení' }} />
+        <Stack.Screen name="bookingDetail/[id]" options={{ title: 'Detail rezervace' }} />
       </Stack>
     </QueryClientProvider>
   );

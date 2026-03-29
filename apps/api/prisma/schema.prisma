@@ -46,7 +46,6 @@ model User {
   provider_profile ProviderProfile?
   bookings         Booking[]
   reviews          Review[]
-
   @@map("users")
 }
 
@@ -163,3 +162,4 @@ model Review {
 
   @@map("reviews")
 }
+
