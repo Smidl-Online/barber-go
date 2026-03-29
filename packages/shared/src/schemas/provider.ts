@@ -31,6 +31,13 @@ export const createAvailabilitySchema = z.object({
   is_active: z.boolean().optional(),
 });
 
+export const createPortfolioImageSchema = z.object({
+  image_url: z.string().url(),
+  caption: z.string().optional(),
+  sort_order: z.number().int().optional(),
+});
+
+export type CreatePortfolioImageInput = z.infer<typeof createPortfolioImageSchema>;
 export type UpdateProviderProfileInput = z.infer<typeof updateProviderProfileSchema>;
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
 export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
