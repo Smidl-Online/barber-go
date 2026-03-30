@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { login as loginApi } from '../../services/auth';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
+import Logo from '../../components/Logo';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -11,6 +24,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -36,79 +50,163 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Přihlášení</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: Colors.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.logoWrap}>
+          <Logo size="md" light={false} />
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+        <View style={styles.card}>
+          <Text style={styles.title}>Přihlášení</Text>
+          <Text style={styles.subtitle}>Vítejte zpět!</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Heslo"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWrap}>
+              <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor={Colors.textMuted}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color={Colors.white} />
-        ) : (
-          <Text style={styles.buttonText}>Přihlásit se</Text>
-        )}
-      </TouchableOpacity>
+            <View style={styles.inputWrap}>
+              <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Heslo"
+                placeholderTextColor={Colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-        <Text style={styles.link}>Nemáte účet? Registrovat se</Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.buttonText}>Přihlásit se</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.linkWrap}>
+          <Text style={styles.linkText}>Nemáte účet? </Text>
+          <Text style={styles.linkAccent}>Registrovat se</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: Spacing.xl,
+    flexGrow: 1,
     justifyContent: 'center',
+    padding: Spacing.xl,
+  },
+  logoWrap: {
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   title: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.text,
-    marginBottom: Spacing.xl,
-    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: FontSize.md,
+    color: Colors.textLight,
+    marginTop: 4,
+    marginBottom: Spacing.lg,
+  },
+  inputGroup: {
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  inputIcon: {
+    marginRight: Spacing.sm,
   },
   input: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    flex: 1,
+    paddingVertical: 14,
     fontSize: FontSize.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: Spacing.md,
+    color: Colors.text,
+  },
+  eyeBtn: {
+    padding: 4,
   },
   button: {
     backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: Spacing.sm,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: '700',
   },
-  link: {
-    color: Colors.accent,
-    textAlign: 'center',
-    marginTop: Spacing.lg,
+  linkWrap: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: Spacing.xl,
+  },
+  linkText: {
     fontSize: FontSize.md,
+    color: Colors.textLight,
+  },
+  linkAccent: {
+    fontSize: FontSize.md,
+    color: Colors.accent,
+    fontWeight: '600',
   },
 });

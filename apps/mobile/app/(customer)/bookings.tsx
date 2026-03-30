@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { getBookings } from '../../services/bookings';
 import BookingCard from '../../components/BookingCard';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
@@ -20,23 +21,38 @@ export default function BookingsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, filter === 'upcoming' && styles.tabActive]}
-          onPress={() => setFilter('upcoming')}
-        >
-          <Text style={[styles.tabText, filter === 'upcoming' && styles.tabTextActive]}>
-            Nadcházející
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, filter === 'past' && styles.tabActive]}
-          onPress={() => setFilter('past')}
-        >
-          <Text style={[styles.tabText, filter === 'past' && styles.tabTextActive]}>
-            Minulé
-          </Text>
-        </TouchableOpacity>
+      {/* Tabs */}
+      <View style={styles.tabsWrap}>
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tab, filter === 'upcoming' && styles.tabActive]}
+            onPress={() => setFilter('upcoming')}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color={filter === 'upcoming' ? Colors.white : Colors.textLight}
+            />
+            <Text style={[styles.tabText, filter === 'upcoming' && styles.tabTextActive]}>
+              Nadcházející
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, filter === 'past' && styles.tabActive]}
+            onPress={() => setFilter('past')}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={16}
+              color={filter === 'past' ? Colors.white : Colors.textLight}
+            />
+            <Text style={[styles.tabText, filter === 'past' && styles.tabTextActive]}>
+              Minulé
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -53,9 +69,22 @@ export default function BookingsScreen() {
           )}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={styles.empty}>
-              {filter === 'upcoming' ? 'Žádné nadcházející rezervace' : 'Žádné minulé rezervace'}
-            </Text>
+            <View style={styles.emptyWrap}>
+              <Ionicons
+                name={filter === 'upcoming' ? 'calendar-outline' : 'archive-outline'}
+                size={48}
+                color={Colors.border}
+              />
+              <Text style={styles.emptyTitle}>
+                {filter === 'upcoming' ? 'Žádné nadcházející rezervace' : 'Žádné minulé rezervace'}
+              </Text>
+              <Text style={styles.emptyHint}>
+                {filter === 'upcoming'
+                  ? 'Objednejte se u barbera v sekci Objevovat'
+                  : 'Zde se zobrazí vaše dokončené rezervace'
+                }
+              </Text>
+            </View>
           }
           onRefresh={refetch}
           refreshing={isLoading}
@@ -70,36 +99,65 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  tabsWrap: {
+    padding: Spacing.md,
+    paddingBottom: 0,
+  },
   tabs: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderRadius: BorderRadius.lg,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   tab: {
     flex: 1,
-    paddingVertical: Spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.md,
   },
   tabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.accent,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabText: {
     fontSize: FontSize.md,
-    color: Colors.textMuted,
+    color: Colors.textLight,
     fontWeight: '600',
   },
   tabTextActive: {
-    color: Colors.accent,
+    color: Colors.white,
   },
   list: {
     padding: Spacing.md,
   },
-  empty: {
+  emptyWrap: {
+    alignItems: 'center',
+    paddingTop: Spacing.xxl * 2,
+    gap: Spacing.sm,
+  },
+  emptyTitle: {
     textAlign: 'center',
     color: Colors.textMuted,
-    marginTop: Spacing.xl,
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
+    fontWeight: '600',
+  },
+  emptyHint: {
+    textAlign: 'center',
+    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+    paddingHorizontal: Spacing.xl,
+    lineHeight: 20,
   },
 });

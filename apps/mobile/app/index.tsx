@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../stores/authStore';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import Logo from '../components/Logo';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -21,34 +23,44 @@ export default function WelcomeScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Text style={styles.logo}>BarberGo</Text>
+        <Logo size="lg" light />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {/* Decorative circles */}
+      <View style={styles.decorCircle1} />
+      <View style={styles.decorCircle2} />
+
       <View style={styles.hero}>
-        <Text style={styles.logo}>💈 BarberGo</Text>
-        <Text style={styles.subtitle}>Najdi svého barbera. Kdekoli. Kdykoli.</Text>
+        <Logo size="lg" light />
       </View>
 
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.primaryBtn}
           onPress={() => router.push('/(auth)/register?role=customer')}
+          activeOpacity={0.8}
         >
-          <Text style={styles.primaryBtnText}>Najít barbera</Text>
+          <Ionicons name="search-outline" size={22} color={Colors.white} />
+          <Text style={styles.primaryBtnText}>Najit barbera</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.secondaryBtn}
           onPress={() => router.push('/(auth)/register?role=provider')}
+          activeOpacity={0.8}
         >
+          <Ionicons name="cut-outline" size={22} color={Colors.white} />
           <Text style={styles.secondaryBtnText}>Jsem barber</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+        <TouchableOpacity
+          onPress={() => router.push('/(auth)/login')}
+          style={styles.loginBtn}
+        >
           <Text style={styles.loginLink}>Již mám účet — Přihlásit se</Text>
         </TouchableOpacity>
       </View>
@@ -67,21 +79,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  decorCircle1: {
+    position: 'absolute',
+    top: -80,
+    right: -80,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(233, 69, 96, 0.08)',
+  },
+  decorCircle2: {
+    position: 'absolute',
+    bottom: 100,
+    left: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(233, 69, 96, 0.05)',
+  },
   hero: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logo: {
-    fontSize: 42,
-    fontWeight: '900',
-    color: Colors.white,
-    marginBottom: Spacing.sm,
-  },
-  subtitle: {
-    fontSize: FontSize.lg,
-    color: Colors.accentLight,
-    textAlign: 'center',
   },
   actions: {
     paddingBottom: Spacing.xxl,
@@ -89,9 +108,17 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: 18,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   primaryBtnText: {
     color: Colors.white,
@@ -99,21 +126,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   secondaryBtn: {
-    borderColor: Colors.white,
-    borderWidth: 2,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: 18,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   secondaryBtnText: {
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: '700',
   },
+  loginBtn: {
+    paddingVertical: Spacing.sm,
+  },
   loginLink: {
-    color: Colors.accentLight,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     fontSize: FontSize.md,
-    marginTop: Spacing.sm,
   },
 });

@@ -16,11 +16,21 @@ import { getProvider, getProviderAvailability } from '../../services/providers';
 import { createBooking } from '../../services/bookings';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import AddressAutocomplete from '../../components/AddressAutocomplete';
 import type { ProviderDetail, Service } from '../../types/models';
 
 type Step = 'service' | 'date' | 'time' | 'location' | 'note' | 'confirm' | 'success';
 
 const STEPS: Step[] = ['service', 'date', 'time', 'location', 'note', 'confirm'];
+
+const STEP_LABELS: Record<string, string> = {
+  service: 'Služba',
+  date: 'Datum',
+  time: 'Čas',
+  location: 'Místo',
+  note: 'Poznámka',
+  confirm: 'Shrnutí',
+};
 
 export default function BookingScreen() {
   const { providerId } = useLocalSearchParams<{ providerId: string }>();
@@ -34,6 +44,8 @@ export default function BookingScreen() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [locationType, setLocationType] = useState<'salon' | 'mobile'>('salon');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [customerLat, setCustomerLat] = useState<number | undefined>();
+  const [customerLng, setCustomerLng] = useState<number | undefined>();
   const [note, setNote] = useState('');
 
   const { data: provider } = useQuery<ProviderDetail>({
@@ -61,7 +73,6 @@ export default function BookingScreen() {
     },
   });
 
-  // Build set of working day indices (0=Monday..6=Sunday)
   const workingDays = useMemo(() => {
     if (!provider) return new Set<number>();
     const days = new Set<number>();
@@ -71,7 +82,6 @@ export default function BookingScreen() {
     return days;
   }, [provider]);
 
-  // Generate next 14 days with availability info
   const dateOptions = useMemo(() => {
     const dates: { date: string; available: boolean }[] = [];
     const today = new Date();
@@ -79,7 +89,6 @@ export default function BookingScreen() {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
-      // Convert JS getDay (0=Sun) to our format (0=Mon)
       const jsDay = d.getDay();
       const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
       dates.push({ date: dateStr, available: workingDays.has(dayIndex) });
@@ -97,6 +106,8 @@ export default function BookingScreen() {
       start_time: selectedTime,
       location_type: locationType,
       customer_address: locationType === 'mobile' ? customerAddress : undefined,
+      customer_lat: locationType === 'mobile' ? customerLat : undefined,
+      customer_lng: locationType === 'mobile' ? customerLng : undefined,
       note: note || undefined,
     });
   };
@@ -114,12 +125,11 @@ export default function BookingScreen() {
     }
   }, [step, router]);
 
-  // Android hardware back button
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const handler = () => {
       goBack();
-      return true; // prevent default
+      return true;
     };
     const subscription = BackHandler.addEventListener('hardwareBackPress', handler);
     return () => subscription.remove();
@@ -166,11 +176,15 @@ export default function BookingScreen() {
 
         <View style={styles.successSummary}>
           <View style={styles.successRow}>
-            <Ionicons name="cut-outline" size={18} color={Colors.textLight} />
+            <View style={styles.successIconWrap}>
+              <Ionicons name="cut-outline" size={18} color={Colors.accent} />
+            </View>
             <Text style={styles.successRowText}>{selectedService?.name}</Text>
           </View>
           <View style={styles.successRow}>
-            <Ionicons name="calendar-outline" size={18} color={Colors.textLight} />
+            <View style={styles.successIconWrap}>
+              <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
+            </View>
             <Text style={styles.successRowText}>
               {selectedDate && new Date(selectedDate).toLocaleDateString('cs-CZ', {
                 weekday: 'long',
@@ -180,44 +194,52 @@ export default function BookingScreen() {
             </Text>
           </View>
           <View style={styles.successRow}>
-            <Ionicons name="time-outline" size={18} color={Colors.textLight} />
+            <View style={styles.successIconWrap}>
+              <Ionicons name="time-outline" size={18} color={Colors.accent} />
+            </View>
             <Text style={styles.successRowText}>{selectedTime}</Text>
           </View>
-          <View style={styles.successRow}>
-            <Ionicons name="cash-outline" size={18} color={Colors.textLight} />
+          <View style={[styles.successRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.successIconWrap}>
+              <Ionicons name="cash-outline" size={18} color={Colors.accent} />
+            </View>
             <Text style={[styles.successRowText, { color: Colors.accent, fontWeight: '700' }]}>
               {selectedService?.price} Kč
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.successBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.successBtn} onPress={() => router.back()} activeOpacity={0.8}>
           <Text style={styles.successBtnText}>Hotovo</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  const currentStepIndex = STEPS.indexOf(step);
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Progress */}
-      <View style={styles.progress}>
-        {STEPS.map((s, i) => (
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      {/* Progress bar */}
+      <View style={styles.progressWrap}>
+        <View style={styles.progressBg}>
           <View
-            key={s}
             style={[
-              styles.progressDot,
-              step === s && styles.progressDotActive,
-              STEPS.indexOf(step) > i && styles.progressDotDone,
+              styles.progressFill,
+              { width: `${((currentStepIndex + 1) / STEPS.length) * 100}%` },
             ]}
           />
-        ))}
+        </View>
+        <Text style={styles.progressLabel}>
+          {STEP_LABELS[step]} ({currentStepIndex + 1}/{STEPS.length})
+        </Text>
       </View>
 
       {/* Step 1: Service */}
       {step === 'service' && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Vyberte službu</Text>
+          <Text style={styles.stepHint}>Zvolte, co pro vás barber udělá</Text>
           {provider.services.map((svc) => (
             <TouchableOpacity
               key={svc.id}
@@ -226,7 +248,11 @@ export default function BookingScreen() {
                 setSelectedService(svc);
                 setStep('date');
               }}
+              activeOpacity={0.7}
             >
+              <View style={styles.serviceIconWrap}>
+                <Ionicons name="cut" size={20} color={Colors.accent} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.optionTitle}>{svc.name}</Text>
                 <Text style={styles.optionSubtitle}>{svc.duration_minutes} min</Text>
@@ -241,6 +267,7 @@ export default function BookingScreen() {
       {step === 'date' && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Vyberte datum</Text>
+          <Text style={styles.stepHint}>Příští 2 týdny</Text>
           {dateOptions.map(({ date, available }) => {
             const d = new Date(date);
             const label = d.toLocaleDateString('cs-CZ', {
@@ -262,8 +289,12 @@ export default function BookingScreen() {
                   setSelectedTime('');
                   setStep('time');
                 }}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.optionTitle, !available && styles.optionTitleDisabled]}>
+                <View style={[styles.serviceIconWrap, !available && { opacity: 0.3 }]}>
+                  <Ionicons name="calendar" size={20} color={available ? Colors.accent : Colors.textMuted} />
+                </View>
+                <Text style={[styles.optionTitle, { flex: 1 }, !available && styles.optionTitleDisabled]}>
                   {label}
                 </Text>
                 {!available ? (
@@ -281,10 +312,14 @@ export default function BookingScreen() {
       {step === 'time' && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Vyberte čas</Text>
+          <Text style={styles.stepHint}>Dostupné termíny pro vybraný den</Text>
           {slotsLoading ? (
-            <ActivityIndicator size="large" color={Colors.accent} />
+            <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: Spacing.xl }} />
           ) : slots.length === 0 ? (
-            <Text style={styles.emptyText}>Žádné volné termíny pro tento den</Text>
+            <View style={styles.emptySlots}>
+              <Ionicons name="time-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>Žádné volné termíny pro tento den</Text>
+            </View>
           ) : (
             <View style={styles.timeGrid}>
               {slots.map((slot) => (
@@ -295,6 +330,7 @@ export default function BookingScreen() {
                     setSelectedTime(slot);
                     setStep('location');
                   }}
+                  activeOpacity={0.7}
                 >
                   <Text
                     style={[styles.timeSlotText, selectedTime === slot && styles.timeSlotTextSelected]}
@@ -312,17 +348,21 @@ export default function BookingScreen() {
       {step === 'location' && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Kde se potkáme?</Text>
+          <Text style={styles.stepHint}>Zvolte, kam se dostavíte</Text>
 
           {canGoSalon && (
             <TouchableOpacity
-              style={[styles.optionCard, locationType === 'salon' && styles.optionCardSelected]}
+              style={[styles.locationCard, locationType === 'salon' && styles.locationCardSelected]}
               onPress={() => {
                 setLocationType('salon');
                 setStep('note');
               }}
+              activeOpacity={0.7}
             >
-              <Ionicons name="business" size={24} color={Colors.accent} />
-              <View style={{ marginLeft: Spacing.md, flex: 1 }}>
+              <View style={[styles.locationIcon, locationType === 'salon' && styles.locationIconSelected]}>
+                <Ionicons name="business" size={24} color={locationType === 'salon' ? Colors.white : Colors.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.optionTitle}>V salonu</Text>
                 {provider.salon_address ? (
                   <Text style={styles.optionSubtitle}>{provider.salon_address}</Text>
@@ -332,16 +372,20 @@ export default function BookingScreen() {
                   </Text>
                 )}
               </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
             </TouchableOpacity>
           )}
 
           {canGoMobile && (
             <TouchableOpacity
-              style={[styles.optionCard, locationType === 'mobile' && styles.optionCardSelected]}
+              style={[styles.locationCard, locationType === 'mobile' && styles.locationCardSelected]}
               onPress={() => setLocationType('mobile')}
+              activeOpacity={0.7}
             >
-              <Ionicons name="car" size={24} color={Colors.accent} />
-              <View style={{ marginLeft: Spacing.md, flex: 1 }}>
+              <View style={[styles.locationIcon, locationType === 'mobile' && styles.locationIconSelected]}>
+                <Ionicons name="car" size={24} color={locationType === 'mobile' ? Colors.white : Colors.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.optionTitle}>Přijede k vám</Text>
                 <Text style={styles.optionSubtitle}>Barber přijede na vaši adresu</Text>
               </View>
@@ -349,39 +393,50 @@ export default function BookingScreen() {
           )}
 
           {locationType === 'mobile' && (
-            <View style={{ marginTop: Spacing.md }}>
-              <TextInput
-                style={styles.input}
-                placeholder="Vaše adresa"
+            <View style={{ marginTop: Spacing.lg }}>
+              <Text style={styles.addressLabel}>Vaše adresa</Text>
+              <AddressAutocomplete
                 value={customerAddress}
                 onChangeText={setCustomerAddress}
+                onSelect={(address, lat, lng) => {
+                  setCustomerLat(lat);
+                  setCustomerLng(lng);
+                }}
+                placeholder="Začněte psát adresu..."
               />
               <TouchableOpacity
                 style={[styles.nextBtn, !customerAddress && styles.nextBtnDisabled]}
                 disabled={!customerAddress}
                 onPress={() => setStep('note')}
+                activeOpacity={0.8}
               >
                 <Text style={styles.nextBtnText}>Pokračovat</Text>
+                <Ionicons name="arrow-forward" size={18} color={Colors.white} />
               </TouchableOpacity>
             </View>
           )}
-
         </View>
       )}
 
       {/* Step 5: Note */}
       {step === 'note' && (
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Poznámka (volitelné)</Text>
-          <TextInput
-            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-            placeholder="Cokoliv, co by měl barber vědět..."
-            value={note}
-            onChangeText={setNote}
-            multiline
-          />
-          <TouchableOpacity style={styles.nextBtn} onPress={() => setStep('confirm')}>
+          <Text style={styles.stepTitle}>Poznámka</Text>
+          <Text style={styles.stepHint}>Volitelné - sdělte barberovi cokoliv důležitého</Text>
+          <View style={styles.noteInputWrap}>
+            <Ionicons name="chatbubble-outline" size={20} color={Colors.textMuted} style={{ marginTop: 2 }} />
+            <TextInput
+              style={styles.noteInput}
+              placeholder="Např. chci to kratší po stranách..."
+              placeholderTextColor={Colors.textMuted}
+              value={note}
+              onChangeText={setNote}
+              multiline
+            />
+          </View>
+          <TouchableOpacity style={styles.nextBtn} onPress={() => setStep('confirm')} activeOpacity={0.8}>
             <Text style={styles.nextBtnText}>Pokračovat ke shrnutí</Text>
+            <Ionicons name="arrow-forward" size={18} color={Colors.white} />
           </TouchableOpacity>
         </View>
       )}
@@ -390,49 +445,41 @@ export default function BookingScreen() {
       {step === 'confirm' && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Shrnutí rezervace</Text>
+          <Text style={styles.stepHint}>Zkontrolujte údaje a potvrďte</Text>
 
           <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Barber</Text>
-              <Text style={styles.summaryValue}>{provider.display_name}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Služba</Text>
-              <Text style={styles.summaryValue}>{selectedService?.name}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Datum</Text>
-              <Text style={styles.summaryValue}>
-                {selectedDate && new Date(selectedDate).toLocaleDateString('cs-CZ')}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Čas</Text>
-              <Text style={styles.summaryValue}>{selectedTime}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Místo</Text>
-              <Text style={styles.summaryValue}>
-                {locationType === 'salon' ? 'Salon' : customerAddress}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Cena</Text>
-              <Text style={[styles.summaryValue, { color: Colors.accent, fontWeight: '700' }]}>
-                {selectedService?.price} Kč
-              </Text>
-            </View>
+            <SummaryRow icon="person" label="Barber" value={provider.display_name} />
+            <SummaryRow icon="cut" label="Služba" value={selectedService?.name || ''} />
+            <SummaryRow
+              icon="calendar"
+              label="Datum"
+              value={selectedDate ? new Date(selectedDate).toLocaleDateString('cs-CZ', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              }) : ''}
+            />
+            <SummaryRow icon="time" label="Čas" value={selectedTime} />
+            <SummaryRow
+              icon="location"
+              label="Místo"
+              value={locationType === 'salon' ? (provider.salon_address || 'Salon') : customerAddress}
+            />
+            <SummaryRow
+              icon="cash"
+              label="Cena"
+              value={`${selectedService?.price} Kč`}
+              accent
+              last
+            />
             {note ? (
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Poznámka</Text>
-                <Text style={styles.summaryValue}>{note}</Text>
-              </View>
+              <SummaryRow icon="chatbubble" label="Poznámka" value={note} last />
             ) : null}
           </View>
 
           {mutation.isError && (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={18} color={Colors.error} />
+              <Ionicons name="alert-circle" size={20} color={Colors.error} />
               <Text style={styles.errorText}>
                 {(mutation.error as any)?.response?.data?.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to znovu.'}
               </Text>
@@ -443,56 +490,151 @@ export default function BookingScreen() {
             style={styles.confirmBtn}
             onPress={handleConfirm}
             disabled={mutation.isPending}
+            activeOpacity={0.8}
           >
             {mutation.isPending ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.confirmBtnText}>Potvrdit rezervaci</Text>
+              <>
+                <Ionicons name="checkmark-circle" size={22} color={Colors.white} />
+                <Text style={styles.confirmBtnText}>Potvrdit rezervaci</Text>
+              </>
             )}
           </TouchableOpacity>
-
         </View>
       )}
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
+function SummaryRow({
+  icon,
+  label,
+  value,
+  accent,
+  last,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  accent?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <View style={[summaryStyles.row, !last && summaryStyles.rowBorder]}>
+      <View style={summaryStyles.labelWrap}>
+        <Ionicons name={`${icon}-outline` as any} size={16} color={Colors.textMuted} />
+        <Text style={summaryStyles.label}>{label}</Text>
+      </View>
+      <Text
+        style={[summaryStyles.value, accent && { color: Colors.accent, fontWeight: '700' }]}
+        numberOfLines={2}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+const summaryStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.background,
+  },
+  labelWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  label: {
+    fontSize: FontSize.md,
+    color: Colors.textLight,
+  },
+  value: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.text,
+    maxWidth: '55%',
+    textAlign: 'right',
+  },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  progress: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: Spacing.md,
+
+  // Progress
+  progressWrap: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
-  progressDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  progressBg: {
+    height: 4,
     backgroundColor: Colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  progressDotActive: { backgroundColor: Colors.accent, width: 20 },
-  progressDotDone: { backgroundColor: Colors.success },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.accent,
+    borderRadius: 2,
+  },
+  progressLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: 6,
+    fontWeight: '600',
+  },
+
   stepContainer: { padding: Spacing.lg },
   stepTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontSize: FontSize.xxl,
+    fontWeight: '800',
     color: Colors.text,
+    marginBottom: 4,
+  },
+  stepHint: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
     marginBottom: Spacing.lg,
   },
+
+  // Option cards
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     borderWidth: 2,
     borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   optionCardSelected: { borderColor: Colors.accent },
   optionCardDisabled: { opacity: 0.45 },
+  serviceIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(233, 69, 96, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
   optionTitle: { fontSize: FontSize.md, fontWeight: '600', color: Colors.text },
   optionTitleDisabled: { color: Colors.textMuted },
   optionSubtitle: { fontSize: FontSize.sm, color: Colors.textLight, marginTop: 2 },
@@ -503,75 +645,156 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontStyle: 'italic',
   },
+
+  // Time grid
   timeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   timeSlot: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  timeSlotSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  timeSlotText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.text },
+  timeSlotSelected: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+    shadowColor: Colors.accent,
+    shadowOpacity: 0.2,
+  },
+  timeSlotText: { fontSize: FontSize.md, fontWeight: '700', color: Colors.text },
   timeSlotTextSelected: { color: Colors.white },
-  emptyText: { textAlign: 'center', color: Colors.textMuted, fontSize: FontSize.md },
-  input: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    fontSize: FontSize.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  emptySlots: {
+    alignItems: 'center',
+    paddingTop: Spacing.xl,
+    gap: Spacing.sm,
   },
+  emptyText: { textAlign: 'center', color: Colors.textMuted, fontSize: FontSize.md },
+
+  // Location
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.sm,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  locationCardSelected: { borderColor: Colors.accent },
+  locationIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: 'rgba(233, 69, 96, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  locationIconSelected: {
+    backgroundColor: Colors.accent,
+  },
+  addressLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+
+  // Note
+  noteInputWrap: {
+    flexDirection: 'row',
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
+    alignItems: 'flex-start',
+  },
+  noteInput: {
+    flex: 1,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+
+  // Buttons
   nextBtn: {
     backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   nextBtnDisabled: { opacity: 0.5 },
   nextBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: '700' },
+
+  // Summary
   summaryCard: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.background,
-  },
-  summaryLabel: { fontSize: FontSize.md, color: Colors.textLight },
-  summaryValue: { fontSize: FontSize.md, fontWeight: '600', color: Colors.text, maxWidth: '60%', textAlign: 'right' },
   confirmBtn: {
     backgroundColor: Colors.success,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: 18,
     alignItems: 'center',
     marginTop: Spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   confirmBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: '#fef2f2',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginTop: Spacing.md,
     borderWidth: 1,
     borderColor: '#fecaca',
   },
-  errorText: { flex: 1, fontSize: FontSize.sm, color: Colors.error },
-  // Success screen
+  errorText: { flex: 1, fontSize: FontSize.sm, color: Colors.error, lineHeight: 18 },
+
+  // Success
   successContainer: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -587,6 +810,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.lg,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   successTitle: {
     fontSize: FontSize.xxl,
@@ -604,18 +832,31 @@ const styles = StyleSheet.create({
   },
   successSummary: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     width: '100%',
     marginBottom: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   successRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: Spacing.sm,
+    gap: 12,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.background,
+  },
+  successIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(233, 69, 96, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   successRowText: {
     fontSize: FontSize.md,
@@ -624,10 +865,25 @@ const styles = StyleSheet.create({
   },
   successBtn: {
     backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: 16,
     paddingHorizontal: Spacing.xxl,
     alignItems: 'center',
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   successBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
+
+  // Legacy input (not used anymore but kept for compatibility)
+  input: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    fontSize: FontSize.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
 });

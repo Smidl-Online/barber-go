@@ -81,10 +81,10 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
         start_time: data.start_time,
         end_time,
         location_type: data.location_type,
-        customer_address: data.customer_address,
-        customer_lat: data.customer_lat,
-        customer_lng: data.customer_lng,
-        note: data.note,
+        customer_address: data.customer_address || undefined,
+        customer_lat: data.customer_lat != null ? data.customer_lat : undefined,
+        customer_lng: data.customer_lng != null ? data.customer_lng : undefined,
+        note: data.note || undefined,
       },
       include: {
         service: true,
@@ -105,7 +105,10 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
       start_time: data.start_time,
     }).catch(console.error);
 
-    res.status(201).json(booking);
+    res.status(201).json({
+      ...booking,
+      service: { ...booking.service, price: Number(booking.service.price) },
+    });
   } catch (e) {
     next(e);
   }

@@ -10,17 +10,17 @@ interface BookingCardProps {
   isProvider?: boolean;
 }
 
-const statusLabels: Record<string, { text: string; color: string }> = {
-  pending: { text: 'Čeká na potvrzení', color: Colors.warning },
-  confirmed: { text: 'Potvrzeno', color: Colors.success },
-  cancelled_by_customer: { text: 'Zrušeno zákazníkem', color: Colors.error },
-  cancelled_by_provider: { text: 'Zrušeno barberem', color: Colors.error },
-  completed: { text: 'Dokončeno', color: Colors.primary },
-  no_show: { text: 'Nedostavil se', color: Colors.textMuted },
+const statusConfig: Record<string, { text: string; color: string; icon: string }> = {
+  pending: { text: 'Čeká na potvrzení', color: Colors.warning, icon: 'time-outline' },
+  confirmed: { text: 'Potvrzeno', color: Colors.success, icon: 'checkmark-circle-outline' },
+  cancelled_by_customer: { text: 'Zrušeno', color: Colors.error, icon: 'close-circle-outline' },
+  cancelled_by_provider: { text: 'Zrušeno', color: Colors.error, icon: 'close-circle-outline' },
+  completed: { text: 'Dokončeno', color: Colors.primary, icon: 'checkmark-done-outline' },
+  no_show: { text: 'Nedostavil se', color: Colors.textMuted, icon: 'eye-off-outline' },
 };
 
 export default function BookingCard({ booking, onPress, isProvider }: BookingCardProps) {
-  const status = statusLabels[booking.status] || { text: booking.status, color: Colors.textMuted };
+  const status = statusConfig[booking.status] || { text: booking.status, color: Colors.textMuted, icon: 'help-outline' };
   const date = new Date(booking.booking_date).toLocaleDateString('cs-CZ', {
     weekday: 'short',
     day: 'numeric',
@@ -29,18 +29,20 @@ export default function BookingCard({ booking, onPress, isProvider }: BookingCar
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.dateSection}>
-        <Text style={styles.date}>{date}</Text>
-        <Text style={styles.time}>{booking.start_time}</Text>
+      {/* Date badge */}
+      <View style={styles.dateBadge}>
+        <Text style={styles.dateTime}>{booking.start_time}</Text>
+        <Text style={styles.dateLabel}>{date}</Text>
       </View>
-      <View style={styles.divider} />
-      <View style={styles.info}>
-        <Text style={styles.serviceName}>{booking.service.name}</Text>
-        <Text style={styles.providerName}>
+
+      {/* Content */}
+      <View style={styles.content}>
+        <Text style={styles.serviceName} numberOfLines={1}>{booking.service.name}</Text>
+        <Text style={styles.providerName} numberOfLines={1}>
           {isProvider ? booking.customer?.full_name : booking.provider.display_name}
         </Text>
         <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+          <Ionicons name={status.icon as any} size={14} color={status.color} />
           <Text style={[styles.statusText, { color: status.color }]}>{status.text}</Text>
           {booking.status === 'completed' && !booking.review && !isProvider && (
             <View style={styles.reviewBadge}>
@@ -49,13 +51,12 @@ export default function BookingCard({ booking, onPress, isProvider }: BookingCar
             </View>
           )}
           {booking.review && (
-            <View style={styles.reviewedBadge}>
-              <Ionicons name="star" size={10} color={Colors.star} />
-            </View>
+            <Ionicons name="star" size={14} color={Colors.star} style={{ marginLeft: 6 }} />
           )}
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+
+      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
     </TouchableOpacity>
   );
 }
@@ -65,37 +66,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.cardBg,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
-  dateSection: {
+  dateBadge: {
     alignItems: 'center',
-    width: 60,
+    backgroundColor: 'rgba(233, 69, 96, 0.06)',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minWidth: 64,
   },
-  date: {
-    fontSize: FontSize.sm,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  time: {
+  dateTime: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.accent,
   },
-  divider: {
-    width: 1,
-    height: 40,
-    backgroundColor: Colors.border,
-    marginHorizontal: Spacing.md,
+  dateLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: Colors.textLight,
+    marginTop: 2,
   },
-  info: {
+  content: {
     flex: 1,
+    marginLeft: Spacing.md,
   },
   serviceName: {
     fontSize: FontSize.md,
@@ -110,13 +111,8 @@ const styles = StyleSheet.create({
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    marginTop: 6,
+    gap: 4,
   },
   statusText: {
     fontSize: FontSize.xs,
@@ -130,14 +126,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: BorderRadius.full,
-    marginLeft: 8,
+    marginLeft: 6,
   },
   reviewBadgeText: {
     fontSize: FontSize.xs,
     fontWeight: '700',
     color: Colors.white,
-  },
-  reviewedBadge: {
-    marginLeft: 8,
   },
 });
