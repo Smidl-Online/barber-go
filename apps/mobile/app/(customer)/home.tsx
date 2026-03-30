@@ -191,13 +191,14 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   filters: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   filtersContent: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
     gap: Spacing.sm,
+    alignItems: 'center' as const,
   },
   chip: {
     flexDirection: 'row',
@@ -209,17 +210,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
     elevation: 1,
   },
   chipActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.2,
   },
   chipText: {
     fontSize: FontSize.sm,
