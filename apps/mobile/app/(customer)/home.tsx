@@ -25,7 +25,7 @@ const SORT_OPTIONS = [
 ];
 
 const LOCATION_FILTERS = [
-  { key: '', label: 'Vše', icon: 'grid-outline' as const },
+  { key: 'all', label: 'Vše', icon: 'grid-outline' as const },
   { key: 'salon', label: 'Salon', icon: 'business-outline' as const },
   { key: 'mobile', label: 'Mobilní', icon: 'car-outline' as const },
 ];
@@ -35,7 +35,7 @@ export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('rating');
-  const [locFilter, setLocFilter] = useState('');
+  const [locFilter, setLocFilter] = useState('all');
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['providers', search, sortBy, locFilter],
@@ -43,7 +43,7 @@ export default function HomeScreen() {
       getProviders({
         search: search || undefined,
         sort_by: sortBy,
-        location_type: locFilter || undefined,
+        location_type: locFilter === 'all' ? undefined : locFilter,
         category: 'barber',
       } as any),
   });
@@ -206,6 +206,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -214,6 +216,7 @@ const styles = StyleSheet.create({
   },
   chipActive: {
     backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOpacity: 0.2,
   },
