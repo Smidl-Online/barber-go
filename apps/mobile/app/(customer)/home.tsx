@@ -192,11 +192,12 @@ const styles = StyleSheet.create({
   },
   filters: {
     marginTop: Spacing.md,
-    maxHeight: 44,
+    marginBottom: Spacing.xs,
   },
   filtersContent: {
     paddingHorizontal: Spacing.md,
-    gap: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    gap: Spacing.sm,
   },
   chip: {
     flexDirection: 'row',
