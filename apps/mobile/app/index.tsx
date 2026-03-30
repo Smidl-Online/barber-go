@@ -45,7 +45,7 @@ export default function WelcomeScreen() {
           activeOpacity={0.8}
         >
           <Ionicons name="search-outline" size={22} color={Colors.white} />
-          <Text style={styles.primaryBtnText}>Najit barbera</Text>
+          <Text style={styles.primaryBtnText}>Najít barbera</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

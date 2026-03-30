@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,12 @@ export default function AddressAutocomplete({
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const searchAddress = useCallback(async (query: string) => {
     if (query.length < 3) {

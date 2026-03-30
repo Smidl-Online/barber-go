@@ -876,14 +876,4 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   successBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
-
-  // Legacy input (not used anymore but kept for compatibility)
-  input: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    fontSize: FontSize.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
 });
