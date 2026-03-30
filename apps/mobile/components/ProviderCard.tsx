@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import StarRating from './StarRating';
@@ -27,7 +27,7 @@ export default function ProviderCard({ provider, onPress }: ProviderCardProps) {
         <Image source={{ uri: provider.profile_photo_url }} style={styles.avatar} />
       ) : (
         <View style={[styles.avatar, styles.avatarPlaceholder]}>
-          <Ionicons name="person" size={36} color={Colors.white} />
+          <Ionicons name="person" size={28} color={Colors.white} />
         </View>
       )}
       <View style={styles.info}>
@@ -42,16 +42,19 @@ export default function ProviderCard({ provider, onPress }: ProviderCardProps) {
         </View>
         <View style={styles.badges}>
           <View style={styles.badge}>
-            <Ionicons name={locationIcon} size={12} color={Colors.accent} />
+            <Ionicons name={locationIcon as any} size={12} color={Colors.accent} />
             <Text style={styles.badgeText}>{locationLabel}</Text>
           </View>
-          {provider.min_price && (
+          {provider.min_price != null && (
             <Text style={styles.price}>od {provider.min_price} Kč</Text>
           )}
         </View>
         {provider.distance_km !== null && (
           <Text style={styles.distance}>{provider.distance_km} km</Text>
         )}
+      </View>
+      <View style={styles.chevronWrap}>
+        <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
       </View>
     </TouchableOpacity>
   );
@@ -61,19 +64,20 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     backgroundColor: Colors.cardBg,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
+    alignItems: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: BorderRadius.md,
+    width: 72,
+    height: 72,
+    borderRadius: BorderRadius.lg,
   },
   avatarPlaceholder: {
     backgroundColor: Colors.primaryLight,
@@ -94,7 +98,7 @@ const styles = StyleSheet.create({
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   ratingText: {
     fontSize: FontSize.sm,
@@ -110,9 +114,9 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(233, 69, 96, 0.06)',
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
   },
   badgeText: {
@@ -123,12 +127,15 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.text,
   },
   distance: {
     fontSize: FontSize.xs,
     color: Colors.textMuted,
     marginTop: 2,
+  },
+  chevronWrap: {
+    marginLeft: Spacing.sm,
   },
 });
