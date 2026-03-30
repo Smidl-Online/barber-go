@@ -29,10 +29,19 @@ export default function ProviderDetailScreen() {
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => router.back()}
-          style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -8 }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 6,
+            paddingHorizontal: 4,
+            marginLeft: 0,
+          }}
+          activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.white} />
-          <Text style={{ color: Colors.white, fontSize: 17 }}>Zpět</Text>
+          <Ionicons name="chevron-back" size={22} color={Colors.white} />
+          <Text style={{ color: Colors.white, fontSize: 16, fontWeight: '500', marginLeft: 2 }}>
+            Zpět
+          </Text>
         </TouchableOpacity>
       ),
     });
