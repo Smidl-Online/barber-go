@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -80,7 +81,12 @@ export default function HomeScreen() {
 
       {/* Filter chips */}
       <View style={styles.filtersContainer}>
-        <View style={styles.filtersRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScrollContent}
+          style={styles.filtersScroll}
+        >
           {LOCATION_FILTERS.map((f) => (
             <TouchableOpacity
               key={f.key}
@@ -98,8 +104,13 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
-        <View style={styles.filtersRow}>
+        </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScrollContent}
+          style={styles.filtersScroll}
+        >
           {SORT_OPTIONS.map((s) => (
             <TouchableOpacity
               key={s.key}
@@ -117,7 +128,7 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </View>
 
       {/* Provider list */}
@@ -188,15 +199,18 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   filtersContainer: {
-    paddingHorizontal: Spacing.md,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xs,
     gap: Spacing.sm,
   },
-  filtersRow: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
+  filtersScroll: {
+    flexGrow: 0,
+  },
+  filtersScrollContent: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
     gap: Spacing.sm,
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
