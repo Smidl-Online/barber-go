@@ -4,10 +4,11 @@ import {
   Text,
   TextInput,
   FlatList,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('rating');
   const [locFilter, setLocFilter] = useState('all');
+  const [sortModalVisible, setSortModalVisible] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['providers', search, sortBy, locFilter],
@@ -50,6 +52,7 @@ export default function HomeScreen() {
 
   const providers: Provider[] = data?.data || [];
   const firstName = user?.full_name?.split(' ')[0] || '';
+  const activeSortLabel = SORT_OPTIONS.find((s) => s.key === sortBy)?.label || '';
 
   return (
     <View style={styles.container}>
@@ -60,79 +63,67 @@ export default function HomeScreen() {
         </Text>
         <Text style={styles.headerSubtitle}>Najdi si svého barbera</Text>
 
-        {/* Search bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={Colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Hledat barbera..."
-            placeholderTextColor={Colors.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            returnKeyType="search"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+        {/* Search bar + sort button */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="rgba(255,255,255,0.5)" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Hledat barbera..."
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.sortButton}
+            onPress={() => setSortModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="funnel-outline" size={20} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Location type pills */}
+        <View style={styles.typePills}>
+          {LOCATION_FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.pill, locFilter === f.key && styles.pillActive]}
+              onPress={() => setLocFilter(f.key)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={f.icon}
+                size={14}
+                color={locFilter === f.key ? Colors.primary : 'rgba(255,255,255,0.7)'}
+              />
+              <Text style={[styles.pillText, locFilter === f.key && styles.pillTextActive]}>
+                {f.label}
+              </Text>
             </TouchableOpacity>
-          )}
+          ))}
         </View>
       </View>
 
-      {/* Filter chips */}
-      <View style={styles.filtersContainer}>
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Typ</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtersScrollContent}
-          >
-            {LOCATION_FILTERS.map((f) => (
-              <TouchableOpacity
-                key={f.key}
-                style={[styles.chip, locFilter === f.key && styles.chipActive]}
-                onPress={() => setLocFilter(f.key)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={f.icon}
-                  size={14}
-                  color={locFilter === f.key ? Colors.white : Colors.text}
-                />
-                <Text style={[styles.chipText, locFilter === f.key && styles.chipTextActive]}>
-                  {f.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Řazení</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtersScrollContent}
-          >
-            {SORT_OPTIONS.map((s) => (
-              <TouchableOpacity
-                key={s.key}
-                style={[styles.chip, sortBy === s.key && styles.chipActive]}
-                onPress={() => setSortBy(s.key)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={s.icon}
-                  size={14}
-                  color={sortBy === s.key ? Colors.white : Colors.text}
-                />
-                <Text style={[styles.chipText, sortBy === s.key && styles.chipTextActive]}>
-                  {s.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+      {/* Active sort indicator */}
+      <View style={styles.sortIndicator}>
+        <TouchableOpacity
+          style={styles.sortIndicatorBtn}
+          onPress={() => setSortModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="swap-vertical-outline" size={14} color={Colors.textMuted} />
+          <Text style={styles.sortIndicatorText}>
+            Řazení: <Text style={styles.sortIndicatorValue}>{activeSortLabel}</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Provider list */}
@@ -160,6 +151,51 @@ export default function HomeScreen() {
           refreshing={isLoading}
         />
       )}
+
+      {/* Sort Modal */}
+      <Modal
+        visible={sortModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSortModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setSortModalVisible(false)}>
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Řazení</Text>
+            {SORT_OPTIONS.map((s) => (
+              <TouchableOpacity
+                key={s.key}
+                style={[styles.modalOption, sortBy === s.key && styles.modalOptionActive]}
+                onPress={() => {
+                  setSortBy(s.key);
+                  setSortModalVisible(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.modalOptionLeft}>
+                  <Ionicons
+                    name={s.icon}
+                    size={20}
+                    color={sortBy === s.key ? Colors.accent : Colors.textLight}
+                  />
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      sortBy === s.key && styles.modalOptionTextActive,
+                    ]}
+                  >
+                    {s.label}
+                  </Text>
+                </View>
+                {sortBy === s.key && (
+                  <Ionicons name="checkmark-circle" size={22} color={Colors.accent} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -188,7 +224,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: Spacing.md,
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
   searchContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.12)',
@@ -202,51 +244,56 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.white,
   },
-  filtersContainer: {
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  filterRow: {
-    flexDirection: 'row',
+  sortButton: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: '700',
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    width: 52,
-    paddingLeft: Spacing.md,
-  },
-  filtersScrollContent: {
-    paddingRight: Spacing.md,
+  typePills: {
+    flexDirection: 'row',
+    marginTop: Spacing.md,
     gap: Spacing.sm,
-    alignItems: 'center',
   },
-  chip: {
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 14,
+    gap: 6,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.background,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  chipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  pillActive: {
+    backgroundColor: Colors.white,
   },
-  chipText: {
+  pillText: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.text,
+    color: 'rgba(255,255,255,0.7)',
   },
-  chipTextActive: {
-    color: Colors.white,
+  pillTextActive: {
+    color: Colors.primary,
+  },
+  sortIndicator: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  sortIndicatorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sortIndicatorText: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+  },
+  sortIndicatorValue: {
+    fontWeight: '700',
+    color: Colors.text,
   },
   list: {
     padding: Spacing.md,
@@ -267,5 +314,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.textMuted,
     fontSize: FontSize.sm,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+    paddingTop: Spacing.md,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+  modalTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xs,
+  },
+  modalOptionActive: {
+    backgroundColor: 'rgba(233, 69, 96, 0.08)',
+  },
+  modalOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  modalOptionText: {
+    fontSize: FontSize.lg,
+    color: Colors.text,
+  },
+  modalOptionTextActive: {
+    fontWeight: '700',
+    color: Colors.accent,
   },
 });
