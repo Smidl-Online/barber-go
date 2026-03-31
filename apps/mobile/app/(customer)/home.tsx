@@ -4,10 +4,10 @@ import {
   Text,
   TextInput,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -80,48 +80,56 @@ export default function HomeScreen() {
       </View>
 
       {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filters}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {LOCATION_FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.chip, locFilter === f.key && styles.chipActive]}
-            onPress={() => setLocFilter(f.key)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={f.icon}
-              size={14}
-              color={locFilter === f.key ? Colors.white : Colors.textLight}
-            />
-            <Text style={[styles.chipText, locFilter === f.key && styles.chipTextActive]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        <View style={styles.chipDivider} />
-        {SORT_OPTIONS.map((s) => (
-          <TouchableOpacity
-            key={s.key}
-            style={[styles.chip, sortBy === s.key && styles.chipActive]}
-            onPress={() => setSortBy(s.key)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={s.icon}
-              size={14}
-              color={sortBy === s.key ? Colors.white : Colors.textLight}
-            />
-            <Text style={[styles.chipText, sortBy === s.key && styles.chipTextActive]}>
-              {s.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.filtersContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScrollContent}
+          style={styles.filtersScroll}
+        >
+          {LOCATION_FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.chip, locFilter === f.key && styles.chipActive]}
+              onPress={() => setLocFilter(f.key)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={f.icon}
+                size={14}
+                color={locFilter === f.key ? Colors.white : Colors.textLight}
+              />
+              <Text style={[styles.chipText, locFilter === f.key && styles.chipTextActive]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScrollContent}
+          style={styles.filtersScroll}
+        >
+          {SORT_OPTIONS.map((s) => (
+            <TouchableOpacity
+              key={s.key}
+              style={[styles.chip, sortBy === s.key && styles.chipActive]}
+              onPress={() => setSortBy(s.key)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={s.icon}
+                size={14}
+                color={sortBy === s.key ? Colors.white : Colors.textLight}
+              />
+              <Text style={[styles.chipText, sortBy === s.key && styles.chipTextActive]}>
+                {s.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Provider list */}
       {isLoading ? (
@@ -190,15 +198,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.white,
   },
-  filters: {
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  filtersContent: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+  filtersContainer: {
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
     gap: Spacing.sm,
-    alignItems: 'center' as const,
+  },
+  filtersScroll: {
+    flexGrow: 0,
+  },
+  filtersScrollContent: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    gap: Spacing.sm,
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
@@ -223,13 +235,6 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: Colors.white,
-  },
-  chipDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.border,
-    marginHorizontal: 4,
-    alignSelf: 'center',
   },
   list: {
     padding: Spacing.md,
