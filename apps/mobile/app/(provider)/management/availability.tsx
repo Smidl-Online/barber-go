@@ -13,9 +13,9 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
-import type { AvailabilitySlot } from '../../types/models';
+import api from '../../../services/api';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
+import type { AvailabilitySlot } from '../../../types/models';
 
 const DAY_NAMES = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
 const DAY_SHORT = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];

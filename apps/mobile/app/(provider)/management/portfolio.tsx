@@ -14,9 +14,9 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
-import type { PortfolioImage } from '../../types/models';
+import api from '../../../services/api';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
+import type { PortfolioImage } from '../../../types/models';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const IMAGE_SIZE = (SCREEN_WIDTH - Spacing.md * 3) / 2;

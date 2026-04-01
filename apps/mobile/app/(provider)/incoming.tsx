@@ -6,6 +6,19 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import type { Booking } from '../../types/models';
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  pending: { label: 'Čeká na potvrzení', color: Colors.warning, icon: 'time-outline' },
+  confirmed: { label: 'Potvrzeno', color: Colors.success, icon: 'checkmark-circle-outline' },
+  completed: { label: 'Dokončeno', color: Colors.primary, icon: 'checkmark-done-outline' },
+  cancelled_by_customer: { label: 'Zrušeno zákazníkem', color: Colors.error, icon: 'close-circle-outline' },
+  cancelled_by_provider: { label: 'Zrušeno', color: Colors.error, icon: 'close-circle-outline' },
+  no_show: { label: 'Nedostavil se', color: Colors.textMuted, icon: 'alert-circle-outline' },
+};
+
+function getStatusConfig(status: string) {
+  return STATUS_CONFIG[status] || { label: status, color: Colors.textMuted, icon: 'help-circle-outline' as const };
+}
+
 export default function IncomingScreen() {
   const queryClient = useQueryClient();
 
@@ -44,16 +57,25 @@ export default function IncomingScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
             const date = new Date(item.booking_date).toLocaleDateString('cs-CZ');
+            const statusCfg = getStatusConfig(item.status);
             return (
               <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.customerName}>{item.customer?.full_name || 'Zákazník'}</Text>
-                  <Text style={styles.dateTime}>
-                    {date} {item.start_time}
-                  </Text>
+                <View style={styles.cardTop}>
+                  <View style={styles.timeBlock}>
+                    <Text style={styles.timeText}>{item.start_time}</Text>
+                    <Text style={styles.dateText}>{date}</Text>
+                  </View>
+                  <View style={styles.cardInfo}>
+                    <Text style={styles.serviceName}>{item.service.name}</Text>
+                    <Text style={styles.customerName}>{item.customer?.full_name || 'Zákazník'}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: statusCfg.color + '15' }]}>
+                      <Ionicons name={statusCfg.icon} size={14} color={statusCfg.color} />
+                      <Text style={[styles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.price}>{item.service.price} Kč</Text>
                 </View>
-                <Text style={styles.serviceName}>{item.service.name}</Text>
-                <Text style={styles.price}>{item.service.price} Kč</Text>
+
                 {item.note && <Text style={styles.note}>Poznámka: {item.note}</Text>}
 
                 {item.status === 'pending' && (
@@ -88,16 +110,15 @@ export default function IncomingScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>{item.status}</Text>
-                </View>
               </View>
             );
           }}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={styles.empty}>Žádné rezervace</Text>
+            <View style={styles.emptyContainer}>
+              <Ionicons name="calendar-outline" size={48} color={Colors.textMuted} />
+              <Text style={styles.empty}>Žádné rezervace</Text>
+            </View>
           }
           onRefresh={refetch}
           refreshing={isLoading}
@@ -112,21 +133,62 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.md },
   card: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  customerName: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text },
-  dateTime: { fontSize: FontSize.sm, color: Colors.textMuted },
-  serviceName: { fontSize: FontSize.md, color: Colors.textLight, marginTop: 4 },
-  price: { fontSize: FontSize.md, fontWeight: '700', color: Colors.accent, marginTop: 2 },
-  note: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4, fontStyle: 'italic' },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+  },
+  timeBlock: {
+    backgroundColor: Colors.accent + '10',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    minWidth: 64,
+  },
+  timeText: {
+    fontSize: FontSize.xl,
+    fontWeight: '800',
+    color: Colors.accent,
+  },
+  dateText: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  cardInfo: { flex: 1 },
+  serviceName: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text },
+  customerName: { fontSize: FontSize.sm, color: Colors.textLight, marginTop: 2 },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    marginTop: Spacing.xs,
+  },
+  statusText: { fontSize: FontSize.xs, fontWeight: '600' },
+  price: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.accent },
+  note: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+    marginTop: Spacing.sm,
+    fontStyle: 'italic',
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.background,
+  },
   actions: { flexDirection: 'row', gap: 8, marginTop: Spacing.md },
   confirmBtn: {
     flex: 1,
@@ -159,12 +221,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionText: { color: Colors.white, fontWeight: '600', fontSize: FontSize.sm },
-  statusBadge: { position: 'absolute', top: Spacing.sm, right: Spacing.sm },
-  statusText: { fontSize: FontSize.xs, color: Colors.textMuted },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: Spacing.xxl,
+    gap: Spacing.sm,
+  },
   empty: {
     textAlign: 'center',
     color: Colors.textMuted,
-    marginTop: Spacing.xl,
     fontSize: FontSize.md,
   },
 });
