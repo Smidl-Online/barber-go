@@ -97,6 +97,12 @@ authRouter.post('/refresh', async (req: Request, res: Response, next: NextFuncti
     }
 
     const payload = verifyRefreshToken(refreshToken);
+
+    const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { id: true } });
+    if (!user) {
+      throw new AppError(401, 'Uživatel neexistuje, přihlaste se znovu');
+    }
+
     const tokens = generateTokens({ userId: payload.userId, role: payload.role });
 
     res.json(tokens);
