@@ -2,7 +2,10 @@
   "expo": {
     "name": "BarberGo",
     "slug": "barber-go",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -31,6 +34,12 @@
       "eas": {
         "projectId": "78e8b6e6-dff6-4b94-9789-d78e72ded15a"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/78e8b6e6-dff6-4b94-9789-d78e72ded15a"
     }
   }
 }
