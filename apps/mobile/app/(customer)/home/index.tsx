@@ -12,12 +12,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { getProviders } from '../../services/providers';
-import { useAuthStore } from '../../stores/authStore';
-import ProviderCard from '../../components/ProviderCard';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
+import { getProviders } from '../../../services/providers';
+import { useAuthStore } from '../../../stores/authStore';
+import ProviderCard from '../../../components/ProviderCard';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import type { Provider } from '../../types/models';
+import type { Provider } from '../../../types/models';
 
 const SORT_OPTIONS = [
   { key: 'rating', label: 'Hodnocení', icon: 'star-outline' as const },
@@ -136,7 +136,7 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <ProviderCard
               provider={item}
-              onPress={() => router.push(`/provider/${item.id}`)}
+              onPress={() => router.push(`/(customer)/home/provider/${item.id}` as any)}
             />
           )}
           contentContainerStyle={styles.list}

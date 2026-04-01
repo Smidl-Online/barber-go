@@ -3,10 +3,10 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getBookings } from '../../services/bookings';
-import BookingCard from '../../components/BookingCard';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
-import type { Booking } from '../../types/models';
+import { getBookings } from '../../../services/bookings';
+import BookingCard from '../../../components/BookingCard';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
+import type { Booking } from '../../../types/models';
 
 export default function BookingsScreen() {
   const router = useRouter();
@@ -80,7 +80,7 @@ export default function BookingsScreen() {
           renderItem={({ item }) => (
             <BookingCard
               booking={item}
-              onPress={() => router.push(`/bookingDetail/${item.id}` as any)}
+              onPress={() => router.push(`/(customer)/bookings/${item.id}` as any)}
             />
           )}
           contentContainerStyle={styles.list}

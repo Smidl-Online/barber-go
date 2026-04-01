@@ -12,10 +12,10 @@ import {
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getProvider } from '../../services/providers';
-import StarRating from '../../components/StarRating';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
-import type { ProviderDetail } from '../../types/models';
+import { getProvider } from '../../../../services/providers';
+import StarRating from '../../../../components/StarRating';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../../constants/theme';
+import type { ProviderDetail } from '../../../../types/models';
 
 const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 
@@ -192,7 +192,7 @@ export default function ProviderDetailScreen() {
       <View style={styles.ctaContainer}>
         <TouchableOpacity
           style={styles.ctaButton}
-          onPress={() => router.push(`/booking/${provider.id}`)}
+          onPress={() => router.push(`/(customer)/home/booking/${provider.id}` as any)}
         >
           <Text style={styles.ctaText}>Rezervovat</Text>
         </TouchableOpacity>

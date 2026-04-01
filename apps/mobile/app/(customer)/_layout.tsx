@@ -39,6 +39,7 @@ export default function CustomerLayout() {
         name="home"
         options={{
           title: 'Objevovat',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
         }}
       />
@@ -46,6 +47,7 @@ export default function CustomerLayout() {
         name="bookings"
         options={{
           title: 'Rezervace',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
         }}
       />
