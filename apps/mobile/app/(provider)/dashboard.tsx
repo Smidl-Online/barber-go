@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { getBookings } from '../../services/bookings';
 import BookingCard from '../../components/BookingCard';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
@@ -10,6 +11,7 @@ import { toVocative } from '../../utils/czechVocative';
 import type { Booking } from '../../types/models';
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const { data, isLoading } = useQuery({
     queryKey: ['bookings', 'upcoming'],
@@ -30,7 +32,7 @@ export default function DashboardScreen() {
         data={todayBookings.length > 0 ? todayBookings : bookings}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <BookingCard booking={item} onPress={() => {}} isProvider />
+          <BookingCard booking={item} onPress={() => router.push(`/bookingDetail/${item.id}` as any)} isProvider />
         )}
         contentContainerStyle={styles.list}
         ListHeaderComponent={

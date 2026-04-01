@@ -35,6 +35,7 @@ export default function EditProfileScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [isEditing, setIsEditing] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['provider-profile'],
@@ -66,6 +67,7 @@ export default function EditProfileScreen() {
       (await api.put('/provider/profile', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-profile'] });
+      setIsEditing(false);
       Alert.alert('Uloženo', 'Profil byl úspěšně aktualizován');
     },
     onError: (err: any) => {
@@ -90,6 +92,19 @@ export default function EditProfileScreen() {
     });
   };
 
+  const handleCancel = () => {
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setBio(profile.bio || '');
+      setCategory(profile.category || '');
+      setExperienceYears(profile.experience_years?.toString() || '');
+      setLocationType(profile.location_type || 'salon');
+      setSalonAddress(profile.salon_address || '');
+      setServiceRadius(profile.service_radius_km?.toString() || '');
+    }
+    setIsEditing(false);
+  };
+
   const handleLogout = () => {
     Alert.alert('Odhlášení', 'Opravdu se chcete odhlásit?', [
       { text: 'Zrušit', style: 'cancel' },
@@ -112,6 +127,77 @@ export default function EditProfileScreen() {
     );
   }
 
+  const locationLabel = LOCATION_TYPES.find((lt) => lt.value === locationType)?.label || locationType;
+
+  // Read-only view
+  if (!isEditing) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Profile header */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons name="person" size={32} color={Colors.white} />
+          </View>
+          <View style={styles.profileHeaderInfo}>
+            <Text style={styles.profileName}>{user?.full_name}</Text>
+            <Text style={styles.profileEmail}>{user?.email}</Text>
+            {category ? (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>{category}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Info cards */}
+        <Text style={styles.sectionLabel}>Základní údaje</Text>
+        <View style={styles.card}>
+          <InfoRow icon="person-outline" label="Zobrazované jméno" value={displayName || '—'} />
+          <InfoRow icon="document-text-outline" label="Bio" value={bio || '—'} />
+          <InfoRow icon="ribbon-outline" label="Kategorie" value={category || '—'} />
+          <InfoRow
+            icon="trophy-outline"
+            label="Roky zkušeností"
+            value={experienceYears ? `${experienceYears} let` : '—'}
+            isLast
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>Lokace</Text>
+        <View style={styles.card}>
+          <InfoRow icon="navigate-outline" label="Typ služby" value={locationLabel} />
+          {(locationType === 'salon' || locationType === 'both') && (
+            <InfoRow icon="location-outline" label="Adresa salónu" value={salonAddress || '—'} />
+          )}
+          {(locationType === 'mobile' || locationType === 'both') && (
+            <InfoRow
+              icon="compass-outline"
+              label="Dojezdový radius"
+              value={serviceRadius ? `${serviceRadius} km` : '—'}
+              isLast
+            />
+          )}
+          {locationType === 'salon' && !salonAddress && (
+            <View />
+          )}
+        </View>
+
+        {/* Edit button */}
+        <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}>
+          <Ionicons name="create-outline" size={20} color={Colors.white} />
+          <Text style={styles.editBtnText}>Upravit profil</Text>
+        </TouchableOpacity>
+
+        {/* Logout */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color={Colors.error} />
+          <Text style={styles.logoutText}>Odhlásit se</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  }
+
+  // Edit mode
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Profile header */}
@@ -228,24 +314,48 @@ export default function EditProfileScreen() {
         )}
       </View>
 
-      <TouchableOpacity
-        style={[styles.saveBtn, mutation.isPending && styles.saveBtnDisabled]}
-        onPress={handleSave}
-        disabled={mutation.isPending}
-      >
-        {mutation.isPending ? (
-          <ActivityIndicator color={Colors.white} />
-        ) : (
-          <Text style={styles.saveBtnText}>Uložit profil</Text>
-        )}
-      </TouchableOpacity>
-
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color={Colors.error} />
-        <Text style={styles.logoutText}>Odhlásit se</Text>
-      </TouchableOpacity>
+      {/* Action buttons */}
+      <View style={styles.editActions}>
+        <TouchableOpacity style={styles.cancelEditBtn} onPress={handleCancel}>
+          <Text style={styles.cancelEditBtnText}>Zrušit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveBtn, mutation.isPending && styles.saveBtnDisabled]}
+          onPress={handleSave}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? (
+            <ActivityIndicator color={Colors.white} />
+          ) : (
+            <Text style={styles.saveBtnText}>Uložit</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </ScrollView>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+  isLast,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  isLast?: boolean;
+}) {
+  return (
+    <View style={[styles.infoRow, !isLast && styles.infoRowBorder]}>
+      <View style={styles.infoRowIcon}>
+        <Ionicons name={icon} size={18} color={Colors.textMuted} />
+      </View>
+      <View style={styles.infoRowContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -274,6 +384,19 @@ const styles = StyleSheet.create({
   profileHeaderInfo: { flex: 1 },
   profileName: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text },
   profileEmail: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.accent + '15',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    marginTop: Spacing.xs,
+  },
+  categoryBadgeText: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
 
   sectionLabel: {
     fontSize: FontSize.sm,
@@ -290,6 +413,54 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
+
+  // Read-only info rows
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  infoRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.background,
+  },
+  infoRowIcon: {
+    width: 28,
+    alignItems: 'center',
+    paddingTop: 2,
+  },
+  infoRowContent: { flex: 1 },
+  infoLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: FontSize.md,
+    color: Colors.text,
+    fontWeight: '500',
+  },
+
+  // Edit button
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.accent,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  editBtnText: {
+    color: Colors.white,
+    fontWeight: '700',
+    fontSize: FontSize.lg,
+  },
+
+  // Edit mode styles
   label: {
     fontSize: FontSize.sm,
     fontWeight: '600',
@@ -355,12 +526,32 @@ const styles = StyleSheet.create({
   locationBtnTextActive: {
     color: Colors.white,
   },
+  editActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  cancelEditBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  cancelEditBtnText: {
+    color: Colors.textLight,
+    fontWeight: '600',
+    fontSize: FontSize.lg,
+  },
   saveBtn: {
+    flex: 2,
     backgroundColor: Colors.accent,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.sm,
   },
   saveBtnDisabled: {
     opacity: 0.7,

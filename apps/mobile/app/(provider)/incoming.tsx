@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { getBookings, updateBookingStatus } from '../../services/bookings';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ function getStatusConfig(status: string) {
 }
 
 export default function IncomingScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery({
@@ -59,7 +61,11 @@ export default function IncomingScreen() {
             const date = new Date(item.booking_date).toLocaleDateString('cs-CZ');
             const statusCfg = getStatusConfig(item.status);
             return (
-              <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.card}
+                activeOpacity={0.7}
+                onPress={() => router.push(`/bookingDetail/${item.id}` as any)}
+              >
                 <View style={styles.cardTop}>
                   <View style={styles.timeBlock}>
                     <Text style={styles.timeText}>{item.start_time}</Text>
@@ -110,7 +116,7 @@ export default function IncomingScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           }}
           contentContainerStyle={styles.list}

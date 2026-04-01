@@ -11,7 +11,7 @@ export default function ManagementLayout() {
         headerBackTitle: 'Zpět',
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="index" options={{ title: 'Správa' }} />
       <Stack.Screen name="services" options={{ title: 'Služby' }} />
       <Stack.Screen name="availability" options={{ title: 'Pracovní doba' }} />
       <Stack.Screen name="portfolio" options={{ title: 'Portfolio' }} />
