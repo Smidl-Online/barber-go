@@ -25,6 +25,12 @@
       },
       "package": "cz.barbergo.app"
     },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/78e8b6e6-dff6-4b94-9789-d78e72ded15a"
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store"
