@@ -66,14 +66,14 @@ export default function IncomingScreen() {
                     <Text style={styles.dateText}>{date}</Text>
                   </View>
                   <View style={styles.cardInfo}>
-                    <Text style={styles.serviceName}>{item.service.name}</Text>
+                    <Text style={styles.serviceName}>{item.service?.name}</Text>
                     <Text style={styles.customerName}>{item.customer?.full_name || 'Zákazník'}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: statusCfg.color + '15' }]}>
                       <Ionicons name={statusCfg.icon} size={14} color={statusCfg.color} />
                       <Text style={[styles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
                     </View>
                   </View>
-                  <Text style={styles.price}>{item.service.price} Kč</Text>
+                  <Text style={styles.price}>{item.service?.price} Kč</Text>
                 </View>
 
                 {item.note && <Text style={styles.note}>Poznámka: {item.note}</Text>}

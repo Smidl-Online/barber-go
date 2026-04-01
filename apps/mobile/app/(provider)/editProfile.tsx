@@ -17,18 +17,18 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 
 const LOCATION_TYPES = [
-  { value: 'salon', label: 'Salon', icon: 'business' as const },
-  { value: 'mobile', label: 'Mobilni', icon: 'car' as const },
-  { value: 'both', label: 'Oboji', icon: 'swap-horizontal' as const },
+  { value: 'salon', label: 'Salón', icon: 'business' as const },
+  { value: 'mobile', label: 'Mobilní', icon: 'car' as const },
+  { value: 'both', label: 'Obojí', icon: 'swap-horizontal' as const },
 ];
 
 const CATEGORIES = [
-  'Pansky holic',
-  'Damsky kadernik',
+  'Pánský holič',
+  'Dámský kadeřník',
   'Unisex',
   'Barber shop',
-  'Vizazistka',
-  'Manikura',
+  'Vizážistka',
+  'Manikúra',
 ];
 
 export default function EditProfileScreen() {
