@@ -11,10 +11,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../services/api';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
+import api from '../../../services/api';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import type { Service } from '../../types/models';
+import type { Service } from '../../../types/models';
 
 export default function ServicesScreen() {
   const queryClient = useQueryClient();

@@ -37,8 +37,8 @@ export default function RootLayout() {
         <Stack.Screen name="(provider)" options={{ headerShown: false }} />
         <Stack.Screen name="provider/[id]" options={{ title: 'Detail barbera', headerBackTitle: 'Zpět' }} />
         <Stack.Screen name="booking/[providerId]" options={{ title: 'Rezervace', headerBackVisible: false }} />
-        <Stack.Screen name="review/[bookingId]" options={{ title: 'Hodnocení' }} />
-        <Stack.Screen name="bookingDetail/[id]" options={{ title: 'Detail rezervace' }} />
+        <Stack.Screen name="review/[bookingId]" options={{ title: 'Hodnocení', headerBackTitle: 'Zpět' }} />
+        <Stack.Screen name="bookingDetail/[id]" options={{ title: 'Detail rezervace', headerBackTitle: 'Zpět' }} />
       </Stack>
     </QueryClientProvider>
   );
