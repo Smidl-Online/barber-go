@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JwtPayload } from '../utils/jwt';
 import { AppError } from './errorHandler';
+import { prisma } from '../utils/prisma';
 
 declare global {
   namespace Express {
@@ -18,8 +19,19 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
 
   try {
     const token = header.slice(7);
-    req.user = verifyAccessToken(token);
-    next();
+    const payload = verifyAccessToken(token);
+
+    prisma.user.findUnique({ where: { id: payload.userId }, select: { id: true } })
+      .then((user) => {
+        if (!user) {
+          return next(new AppError(401, 'Uživatel neexistuje, přihlaste se znovu'));
+        }
+        req.user = payload;
+        next();
+      })
+      .catch(() => {
+        next(new AppError(401, 'Chyba ověření uživatele'));
+      });
   } catch {
     next(new AppError(401, 'Neplatný nebo expirovaný token'));
   }

@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../stores/authStore';
@@ -14,11 +15,24 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const loadStoredAuth = useAuthStore((s) => s.loadStoredAuth);
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const wasLoggedIn = useRef(false);
+  const router = useRouter();
   usePushNotifications();
 
   useEffect(() => {
     loadStoredAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      wasLoggedIn.current = true;
+    } else if (!isLoading && wasLoggedIn.current) {
+      wasLoggedIn.current = false;
+      router.replace('/');
+    }
+  }, [user, isLoading]);
 
   return (
     <QueryClientProvider client={queryClient}>
