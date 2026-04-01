@@ -7,6 +7,3 @@ dist/
 ios/
 android/
 .turbo/
-
-# Prevent eas-cli from creating root app.json in monorepo
-/app.json

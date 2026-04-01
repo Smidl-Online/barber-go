@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   BackHandler,
   Platform,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -70,8 +69,7 @@ export default function BookingScreen() {
       setStep('success');
     },
     onError: (err: any) => {
-      const message = err?.response?.data?.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to znovu.';
-      Alert.alert('Chyba', message);
+      // Keep on confirm step so user can retry
     },
   });
 

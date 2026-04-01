@@ -28,10 +28,9 @@ export function errorHandler(
     return;
   }
 
-  if (err instanceof ZodError || err.name === 'ZodError') {
-    const zodErr = err as ZodError;
+  if (err instanceof ZodError) {
     const errors: Record<string, string[]> = {};
-    zodErr.errors.forEach((e) => {
+    err.errors.forEach((e) => {
       const path = e.path.join('.');
       if (!errors[path]) errors[path] = [];
       errors[path].push(e.message);

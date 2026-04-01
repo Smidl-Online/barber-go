@@ -12,7 +12,7 @@ export default function BookingsScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<'upcoming' | 'past'>('upcoming');
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['bookings', filter],
     queryFn: () => getBookings(filter),
   });
@@ -57,22 +57,6 @@ export default function BookingsScreen() {
 
       {isLoading ? (
         <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: Spacing.xl }} />
-      ) : isError ? (
-        <View style={styles.emptyWrap}>
-          <Ionicons name="cloud-offline-outline" size={48} color={Colors.error} />
-          <Text style={styles.emptyTitle}>Nepodařilo se načíst rezervace</Text>
-          <Text style={styles.emptyHint}>
-            {(error as any)?.response?.data?.message || 'Zkontrolujte připojení a zkuste to znovu'}
-          </Text>
-          <TouchableOpacity
-            style={styles.retryBtn}
-            onPress={() => refetch()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="refresh" size={18} color={Colors.white} />
-            <Text style={styles.retryBtnText}>Zkusit znovu</Text>
-          </TouchableOpacity>
-        </View>
       ) : (
         <FlatList
           data={bookings}
@@ -175,20 +159,5 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     paddingHorizontal: Spacing.xl,
     lineHeight: 20,
-  },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.accent,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    marginTop: Spacing.md,
-  },
-  retryBtnText: {
-    color: Colors.white,
-    fontSize: FontSize.md,
-    fontWeight: '600',
   },
 });

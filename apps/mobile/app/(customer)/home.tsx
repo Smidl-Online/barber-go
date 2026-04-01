@@ -18,7 +18,6 @@ import ProviderCard from '../../components/ProviderCard';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import type { Provider } from '../../types/models';
-import { czechVocative } from '../../utils/vocative';
 
 const SORT_OPTIONS = [
   { key: 'rating', label: 'Hodnocení', icon: 'star-outline' as const },
@@ -60,7 +59,7 @@ export default function HomeScreen() {
       {/* Header area */}
       <View style={styles.headerArea}>
         <Text style={styles.greeting}>
-          Ahoj{firstName ? `, ${czechVocative(firstName)}` : ''} 👋
+          Ahoj{firstName ? `, ${firstName}` : ''} 👋
         </Text>
         <Text style={styles.headerSubtitle}>Najdi si svého barbera</Text>
 
