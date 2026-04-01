@@ -3,16 +3,16 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getBookings } from '../../services/bookings';
-import BookingCard from '../../components/BookingCard';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
-import type { Booking } from '../../types/models';
+import { getBookings } from '../../../services/bookings';
+import BookingCard from '../../../components/BookingCard';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
+import type { Booking } from '../../../types/models';
 
 export default function BookingsScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<'upcoming' | 'past'>('upcoming');
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['bookings', filter],
     queryFn: () => getBookings(filter),
   });
@@ -57,6 +57,22 @@ export default function BookingsScreen() {
 
       {isLoading ? (
         <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: Spacing.xl }} />
+      ) : isError ? (
+        <View style={styles.emptyWrap}>
+          <Ionicons name="cloud-offline-outline" size={48} color={Colors.error} />
+          <Text style={styles.emptyTitle}>Nepodařilo se načíst rezervace</Text>
+          <Text style={styles.emptyHint}>
+            {(error as any)?.response?.data?.message || 'Zkontrolujte připojení a zkuste to znovu'}
+          </Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => refetch()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="refresh" size={18} color={Colors.white} />
+            <Text style={styles.retryBtnText}>Zkusit znovu</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={bookings}
@@ -64,7 +80,7 @@ export default function BookingsScreen() {
           renderItem={({ item }) => (
             <BookingCard
               booking={item}
-              onPress={() => router.push(`/bookingDetail/${item.id}` as any)}
+              onPress={() => router.push(`/(customer)/bookings/${item.id}` as any)}
             />
           )}
           contentContainerStyle={styles.list}
@@ -159,5 +175,20 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     paddingHorizontal: Spacing.xl,
     lineHeight: 20,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.md,
+  },
+  retryBtnText: {
+    color: Colors.white,
+    fontSize: FontSize.md,
+    fontWeight: '600',
   },
 });

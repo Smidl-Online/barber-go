@@ -11,11 +11,11 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { getBooking, updateBookingStatus } from '../../services/bookings';
-import StarRating from '../../components/StarRating';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
-import { useAuthStore } from '../../stores/authStore';
-import type { Booking } from '../../types/models';
+import { getBooking, updateBookingStatus } from '../../../services/bookings';
+import StarRating from '../../../components/StarRating';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../constants/theme';
+import { useAuthStore } from '../../../stores/authStore';
+import type { Booking } from '../../../types/models';
 
 const statusLabels: Record<string, { text: string; color: string; icon: string }> = {
   pending: { text: 'Čeká na potvrzení', color: Colors.warning, icon: 'time' },
@@ -203,7 +203,7 @@ export default function BookingDetailScreen() {
           {!isProvider && (
             <TouchableOpacity
               style={styles.editReviewBtn}
-              onPress={() => router.push(`/review/${booking.id}` as any)}
+              onPress={() => router.push(`/(customer)/bookings/review/${booking.id}` as any)}
             >
               <Ionicons name="create-outline" size={16} color={Colors.accent} />
               <Text style={styles.editReviewText}>Upravit hodnocení</Text>
@@ -216,7 +216,7 @@ export default function BookingDetailScreen() {
       {canReview && (
         <TouchableOpacity
           style={styles.reviewBtn}
-          onPress={() => router.push(`/review/${booking.id}` as any)}
+          onPress={() => router.push(`/(customer)/bookings/review/${booking.id}` as any)}
         >
           <Ionicons name="star" size={20} color={Colors.white} />
           <Text style={styles.reviewBtnText}>Napsat hodnocení</Text>

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createReview, updateReview, deleteReview } from '../../services/reviews';
-import { getBooking } from '../../services/bookings';
-import StarRating from '../../components/StarRating';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
+import { createReview, updateReview, deleteReview } from '../../../../services/reviews';
+import { getBooking } from '../../../../services/bookings';
+import StarRating from '../../../../components/StarRating';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ReviewScreen() {

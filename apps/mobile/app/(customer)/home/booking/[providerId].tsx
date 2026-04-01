@@ -9,15 +9,16 @@ import {
   ActivityIndicator,
   BackHandler,
   Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProvider, getProviderAvailability } from '../../services/providers';
-import { createBooking } from '../../services/bookings';
-import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
+import { getProvider, getProviderAvailability } from '../../../../services/providers';
+import { createBooking } from '../../../../services/bookings';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import AddressAutocomplete from '../../components/AddressAutocomplete';
-import type { ProviderDetail, Service } from '../../types/models';
+import AddressAutocomplete from '../../../../components/AddressAutocomplete';
+import type { ProviderDetail, Service } from '../../../../types/models';
 
 type Step = 'service' | 'date' | 'time' | 'location' | 'note' | 'confirm' | 'success';
 
@@ -69,7 +70,8 @@ export default function BookingScreen() {
       setStep('success');
     },
     onError: (err: any) => {
-      // Keep on confirm step so user can retry
+      const message = err?.response?.data?.message || 'Nepodařilo se vytvořit rezervaci. Zkuste to znovu.';
+      Alert.alert('Chyba', message);
     },
   });
 
