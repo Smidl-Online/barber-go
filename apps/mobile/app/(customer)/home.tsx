@@ -18,6 +18,7 @@ import ProviderCard from '../../components/ProviderCard';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import type { Provider } from '../../types/models';
+import { toVocative } from '../../utils/czechVocative';
 
 const SORT_OPTIONS = [
   { key: 'rating', label: 'Hodnocení', icon: 'star-outline' as const },
@@ -52,6 +53,7 @@ export default function HomeScreen() {
 
   const providers: Provider[] = data?.data || [];
   const firstName = user?.full_name?.split(' ')[0] || '';
+  const vocativeName = firstName ? toVocative(firstName) : '';
   const activeSortLabel = SORT_OPTIONS.find((s) => s.key === sortBy)?.label || '';
 
   return (
@@ -59,7 +61,7 @@ export default function HomeScreen() {
       {/* Header area */}
       <View style={styles.headerArea}>
         <Text style={styles.greeting}>
-          Ahoj{firstName ? `, ${firstName}` : ''} 👋
+          Ahoj{vocativeName ? `, ${vocativeName}` : ''} 👋
         </Text>
         <Text style={styles.headerSubtitle}>Najdi si svého barbera</Text>
 
