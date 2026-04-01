@@ -118,7 +118,10 @@ bookingsRouter.post('/', async (req: Request, res: Response, next: NextFunction)
 bookingsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { filter = 'all' } = req.query as Record<string, string>;
-    const now = new Date();
+
+    // Use start-of-day (UTC) for date comparison — booking_date is @db.Date (no time component)
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
 
     const isProvider = req.user!.role === 'provider';
 
@@ -134,11 +137,11 @@ bookingsRouter.get('/', async (req: Request, res: Response, next: NextFunction) 
     }
 
     if (filter === 'upcoming') {
-      where.booking_date = { gte: now };
+      where.booking_date = { gte: today };
       where.status = { in: ['pending', 'confirmed'] };
     } else if (filter === 'past') {
       where.OR = [
-        { booking_date: { lt: now } },
+        { booking_date: { lt: today } },
         { status: { in: ['completed', 'cancelled_by_customer', 'cancelled_by_provider', 'no_show'] } },
       ];
     }
