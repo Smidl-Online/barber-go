@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -23,6 +23,13 @@ function getStatusConfig(status: string) {
 export default function IncomingScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const navigating = useRef(false);
+  const navigateToDetail = useCallback((id: string) => {
+    if (navigating.current) return;
+    navigating.current = true;
+    router.push(`/bookingDetail/${id}` as any);
+    setTimeout(() => { navigating.current = false; }, 1000);
+  }, [router]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['bookings', 'all'],
@@ -64,7 +71,7 @@ export default function IncomingScreen() {
               <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}
-                onPress={() => router.push(`/bookingDetail/${item.id}` as any)}
+                onPress={() => navigateToDetail(item.id)}
               >
                 <View style={styles.cardTop}>
                   <View style={styles.timeBlock}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +11,13 @@ import type { Booking } from '../../types/models';
 export default function BookingsScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<'upcoming' | 'past'>('upcoming');
+  const navigating = useRef(false);
+  const navigateToDetail = useCallback((id: string) => {
+    if (navigating.current) return;
+    navigating.current = true;
+    router.push(`/bookingDetail/${id}` as any);
+    setTimeout(() => { navigating.current = false; }, 1000);
+  }, [router]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['bookings', filter],
@@ -64,7 +71,7 @@ export default function BookingsScreen() {
           renderItem={({ item }) => (
             <BookingCard
               booking={item}
-              onPress={() => router.push(`/bookingDetail/${item.id}` as any)}
+              onPress={() => navigateToDetail(item.id)}
             />
           )}
           contentContainerStyle={styles.list}

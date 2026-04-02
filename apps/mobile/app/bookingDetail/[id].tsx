@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { getBooking, updateBookingStatus } from '../../services/bookings';
@@ -40,9 +40,33 @@ interface BookingDetail extends Booking {
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const isProvider = user?.role === 'provider';
+
+  const goBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(isProvider ? '/(provider)/incoming' : '/(customer)/bookings' as any);
+    }
+  }, [router, isProvider]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={goBack}
+          style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -4 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="chevron-back" size={22} color={Colors.white} />
+          <Text style={{ color: Colors.white, fontSize: 17 }}>Zpět</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, goBack]);
 
   const { data: booking, isLoading } = useQuery<BookingDetail>({
     queryKey: ['booking', id],
