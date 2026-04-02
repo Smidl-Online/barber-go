@@ -44,24 +44,24 @@ export default function WelcomeScreen() {
           onPress={() => router.push('/(auth)/register?role=customer')}
           activeOpacity={0.8}
         >
-          <Ionicons name="search-outline" size={22} color={Colors.white} />
-          <Text style={styles.primaryBtnText}>Najít barbera</Text>
+          <Ionicons name="person-add-outline" size={22} color={Colors.white} />
+          <Text style={styles.primaryBtnText}>Registrovat se</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.secondaryBtn}
-          onPress={() => router.push('/(auth)/register?role=provider')}
+          onPress={() => router.push('/(auth)/login')}
           activeOpacity={0.8}
         >
-          <Ionicons name="cut-outline" size={22} color={Colors.white} />
-          <Text style={styles.secondaryBtnText}>Jsem barber</Text>
+          <Ionicons name="log-in-outline" size={22} color={Colors.white} />
+          <Text style={styles.secondaryBtnText}>Přihlásit se</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push('/(auth)/login')}
-          style={styles.loginBtn}
+          onPress={() => router.push('/(auth)/register?role=provider')}
+          style={styles.barberBtn}
         >
-          <Text style={styles.loginLink}>Již mám účet — Přihlásit se</Text>
+          <Text style={styles.barberLink}>Jste barber? <Text style={styles.barberLinkAccent}>Registrujte se zde</Text></Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -141,12 +141,17 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontWeight: '700',
   },
-  loginBtn: {
-    paddingVertical: Spacing.sm,
+  barberBtn: {
+    paddingVertical: Spacing.md,
   },
-  loginLink: {
-    color: 'rgba(255,255,255,0.5)',
+  barberLink: {
+    color: 'rgba(255,255,255,0.45)',
     textAlign: 'center',
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
+  },
+  barberLinkAccent: {
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

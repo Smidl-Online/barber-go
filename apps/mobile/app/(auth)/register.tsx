@@ -23,12 +23,12 @@ export default function RegisterScreen() {
   const { role: initialRole } = useLocalSearchParams<{ role?: string }>();
   const setAuth = useAuthStore((s) => s.setAuth);
 
+  const role = (initialRole === 'provider' ? 'provider' : 'customer') as 'customer' | 'provider';
+  const isProvider = role === 'provider';
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'customer' | 'provider'>(
-    (initialRole as 'customer' | 'provider') || 'customer'
-  );
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -74,40 +74,10 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>Registrace</Text>
-          <Text style={styles.subtitle}>Vytvořte si účet zdarma</Text>
-
-          {/* Role toggle */}
-          <View style={styles.roleToggle}>
-            <TouchableOpacity
-              style={[styles.roleBtn, role === 'customer' && styles.roleBtnActive]}
-              onPress={() => setRole('customer')}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="person-outline"
-                size={18}
-                color={role === 'customer' ? Colors.white : Colors.textLight}
-              />
-              <Text style={[styles.roleBtnText, role === 'customer' && styles.roleBtnTextActive]}>
-                Zákazník
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.roleBtn, role === 'provider' && styles.roleBtnActive]}
-              onPress={() => setRole('provider')}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="cut-outline"
-                size={18}
-                color={role === 'provider' ? Colors.white : Colors.textLight}
-              />
-              <Text style={[styles.roleBtnText, role === 'provider' && styles.roleBtnTextActive]}>
-                Barber
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.title}>{isProvider ? 'Registrace barbera' : 'Registrace'}</Text>
+          <Text style={styles.subtitle}>
+            {isProvider ? 'Vytvořte si barberský účet' : 'Vytvořte si účet zdarma'}
+          </Text>
 
           <View style={styles.inputGroup}>
             <View style={styles.inputWrap}>
@@ -170,6 +140,19 @@ export default function RegisterScreen() {
           <Text style={styles.linkText}>Již máte účet? </Text>
           <Text style={styles.linkAccent}>Přihlásit se</Text>
         </TouchableOpacity>
+
+        {!isProvider && (
+          <TouchableOpacity onPress={() => router.replace('/(auth)/register?role=provider')} style={styles.linkWrap}>
+            <Text style={styles.linkText}>Jste barber? </Text>
+            <Text style={styles.linkAccent}>Registrujte se zde</Text>
+          </TouchableOpacity>
+        )}
+        {isProvider && (
+          <TouchableOpacity onPress={() => router.replace('/(auth)/register?role=customer')} style={styles.linkWrap}>
+            <Text style={styles.linkText}>Jste zákazník? </Text>
+            <Text style={styles.linkAccent}>Registrujte se zde</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -205,37 +188,6 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     marginTop: 4,
     marginBottom: Spacing.lg,
-  },
-  roleToggle: {
-    flexDirection: 'row',
-    marginBottom: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  roleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.background,
-  },
-  roleBtnActive: {
-    backgroundColor: Colors.accent,
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  roleBtnText: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textLight,
-  },
-  roleBtnTextActive: {
-    color: Colors.white,
   },
   inputGroup: {
     gap: Spacing.md,

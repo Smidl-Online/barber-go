@@ -125,7 +125,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.linkWrap}>
+        <TouchableOpacity onPress={() => router.push('/(auth)/register?role=customer')} style={styles.linkWrap}>
           <Text style={styles.linkText}>Nemáte účet? </Text>
           <Text style={styles.linkAccent}>Registrovat se</Text>
         </TouchableOpacity>
