@@ -27,14 +27,15 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) {
       Alert.alert('Chyba', 'Vyplňte email a heslo');
       return;
     }
 
     setLoading(true);
     try {
-      const data = await loginApi({ email, password });
+      const data = await loginApi({ email: trimmedEmail, password });
       setAuth(data.user, data.accessToken, data.refreshToken);
 
       if (data.user.role === 'provider') {
@@ -43,7 +44,20 @@ export default function LoginScreen() {
         router.replace('/(customer)/home');
       }
     } catch (err: any) {
-      Alert.alert('Chyba', err.response?.data?.message || 'Nepodařilo se přihlásit');
+      const resp = err.response?.data;
+      let message = 'Nepodařilo se přihlásit';
+      if (resp?.errors) {
+        const fieldErrors = Object.entries(resp.errors)
+          .map(([field, msgs]: [string, any]) => {
+            const label = field === 'email' ? 'Email' : field === 'password' ? 'Heslo' : field;
+            return `${label}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
+          })
+          .join('\n');
+        message = fieldErrors || resp.message || message;
+      } else if (resp?.message) {
+        message = resp.message;
+      }
+      Alert.alert('Chyba', message);
     } finally {
       setLoading(false);
     }
